@@ -34,7 +34,8 @@ Kernal module:
 https://unix.stackexchange.com/questions/27042/what-does-a-kernel-source-tree-contain-is-this-related-to-linux-kernel-headers,
 https://www.kernel.org/doc/html/latest/kbuild/modules.html,
 https://en.wikipedia.org/wiki/Loadable_kernel_module,
-https://linux-kernel-labs.github.io/master/labs/kernel_modules.html
+https://linux-kernel-labs.github.io/master/labs/kernel_modules.html,
+http://tldp.org/LDP/lkmpg/2.6/html/lkmpg.html#AEN181
 }
 
     * Loadable kernel module (LMK) is an object file that contains code to extend the running kernel, or so-called base kernel, of an operating system. LKMs are typically used to add support for new hardware (as device drivers) and/or filesystems, or for adding system calls. When the functionality provided by a LKM is no longer required, it can be unloaded in order to free memory and other resources.
@@ -46,6 +47,19 @@ https://linux-kernel-labs.github.io/master/labs/kernel_modules.html
             compromised system to prevent detection of their processes or files, allowing them to maintain control over the system. Many rootkits make use of LKMs in this way. Note that on most operating systems modules do not help privilege elevation in any way, as elevated privilege is required to load a LKM; they merely make it easier for the attacker to hide the break-in.
                 -   Linux allows disabling module loading via sysctl option /proc/sys/kernel/modules_disabled. An initramfs (needs 
                     more outside information) system may load specific modules needed for a machine at boot and then disable module loading. This makes the security very similar to a monolithic kernel. If an attacker can change the initramfs, they can change the kernel binary.
+
+
+Steps for the hello.c  kernel module.
+Follow this source: http://tldp.org/LDP/lkmpg/2.6/html/lkmpg.html#AEN181
+	* Created hello-1.c file
+	* In the terminal type: gedit Makefile
+	* A text editor should have popped up for Makefile
+	* Include everything from chapter 2.2 of the source in this Makefile file
+	* Now you are going to covert it into a readable kernal mod. Type in: make
+	* Now you must install the mod. In the terminal type: sudo insmod ./hello-1.ko	
+	* The mod should be installed. Type in: cat /proc/modules 
+	* To verify that the mod is functioning correct. Type in: cat /var/log/kern.log
+	* remove mod. Type in cat /var/log/kern.log  
 
 
 
