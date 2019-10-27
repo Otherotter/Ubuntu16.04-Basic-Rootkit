@@ -2,7 +2,8 @@
 This is a Rootkit for CSE331
 
 Using the uname command you are able to know system information. Running these command on the VM, these are the respective output:
-    * uname -s (kernal-name): Linux
+
+	* uname -s (kernal-name): Linux
     * uname -v (kernal-version): #46~16.04.1-Ubuntu SMP Mon Dec 4 15:57:59 UTC 2017
     * uname -o (operating system): GNU/Linux
 
@@ -49,8 +50,9 @@ http://tldp.org/LDP/lkmpg/2.6/html/lkmpg.html#AEN181
                     more outside information) system may load specific modules needed for a machine at boot and then disable module loading. This makes the security very similar to a monolithic kernel. If an attacker can change the initramfs, they can change the kernel binary.
 
 
-Steps for the hello.c  kernel module.
+Steps for the hello.c  kernel module:
 Follow this source: http://tldp.org/LDP/lkmpg/2.6/html/lkmpg.html#AEN181
+	
 	* Created hello-1.c file
 	* In the terminal type: gedit Makefile
 	* A text editor should have popped up for Makefile
