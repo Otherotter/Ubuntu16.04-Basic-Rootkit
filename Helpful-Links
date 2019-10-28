@@ -1,0 +1,18 @@
+https://web.archive.org/web/20180609141026/https://w3.cs.jmu.edu/kirkpams/550-f12/papers/linux_rootkit.pdf
+Best doc for reference, code and explaination.
+
+
+https://www.tldp.org/LDP/lkmpg/2.6/lkmpg.pdf
+Big ass Linux kernel programming document, just for reference.
+
+
+https://github.com/nurupo/rootkit
+GitHub repo of a working rootkit.
+
+
+http://imperva.com/learn/application-security/rootkit/
+Background on rootkits and how to deploy/detect
+
+
+https://www.ethicalhacker.net/features/book-reviews/the-basics-of-rootkits-leave-no-trace/
+More background
