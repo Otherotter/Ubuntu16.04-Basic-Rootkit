@@ -1,6 +1,16 @@
 # Rootkit
 This is a Rootkit for CSE331
 
+ROLES OF PROJECT:
+Brain: Hide specific files and directories from showing up when a user does "ls" and similar commands (you have to come up with a protocol that allows attackers to change these)
+
+Marc: Modify the /etc/passwd and /etc/shadow file to add a backdoor account while returning the original contents of the files (pre-attack) when a normal user requests to see the file
+
+Carlos: Hides specific processes from the process table when a user does a "ps"
+
+Brendan: Give the ability to a malicious process to elevate its uid to 0 (root) upon demand (again this involves coming up with a protocol for doing that)
+
+
 Using the uname command you are able to know system information. Running these command on the VM, these are the respective output:
 
 	* uname -s (kernal-name): Linux
