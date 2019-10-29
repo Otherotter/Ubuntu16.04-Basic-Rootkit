@@ -1,0 +1,9 @@
+rootkit.c: The main file for our rootkit
+  - Uploaded as the beginning for all of us to use for our parts.
+  - Just contains a few #includes, and the __init and __exit functions
+    - These will change for us as we start doing our own things
+
+rootkit_conf.conf.h: The Header file for rootkit.c
+  - Uploaded as a blank file to be added to as we progress
+  - This will probably be drastically different for each of us as we start our parts
+  - We may not even need it, but would probably be a better/"more professional" program if we used it
