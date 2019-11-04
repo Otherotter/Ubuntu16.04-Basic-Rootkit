@@ -1,4 +1,4 @@
-# To run quick tests use the command "makefile test"
+# To run quick tests use the command "make test"
 obj-m += rootkit.o
 
 all:
