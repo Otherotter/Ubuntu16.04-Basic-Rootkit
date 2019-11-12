@@ -1,7 +1,7 @@
 #!/bin/bash
 
-RMMODULE=quick
-INSMODULE=quick.ko
+RMMODULE=rootkit
+INSMODULE=rootkit.ko
 
 sudo rmmod $RMMODULE
 make
