@@ -6,6 +6,7 @@
 #include <linux/uaccess.h>
 #include <asm/uaccess.h>
 #include "rootkit_conf.conf.h"
+#include "lsFuncs.h"
 
 MODULE_LICENSE("GPL") ;
 MODULE_AUTHOR("Brendan<brendanfoley1214@gmail.com>") ;
@@ -110,6 +111,7 @@ static int __init rootkit_init(void){
 	char path[40] = BOOT_PATH;
 	strcat(path, kernel_version);
 	printk(KERN_INFO "Full Boot path is: %s\n", path);
+	printk(KERN_INFO "%d\n", testFunc());
 	get_sys_call_table(path);
 	//printk(KERN_INFO "Sys Call Address is: %d\n", sys_call_address);
 	return 0;
