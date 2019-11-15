@@ -1,12 +1,13 @@
 # To run quick tests use the command "make test"
 # https://stackoverflow.com/questions/20301591/m-option-in-make-command-makefile
-obj-m += src/rootkit.o
+#obj-m += quick.o
+obj-m += rootkit.o
 
 all:
-	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
+	sudo make -C /lib/modules/$(shell uname -r)/build/ M=$(PWD) modules
 
 clean:
-	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
+	sudo make -C /lib/modules/$(shell uname -r)/build/ M=$(PWD) clean
 
 test:
 	sudo dmesg -C # Clears the kernel ring buffer
