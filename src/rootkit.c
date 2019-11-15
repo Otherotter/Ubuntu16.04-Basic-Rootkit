@@ -50,8 +50,11 @@ int get_sys_call_table(char *path){
 				const char *address = strsep(&pointer, " ");
 				sys_call_address = kmalloc(256, GFP_KERNEL);
 				memset(sys_call_address, 0x0, 256);
-				kstrtol(address, 16, sys_call_address);
+				// Prints the correct sys_call_table address
+				printk(KERN_INFO "The address we got is: %s after %d iterations\n", address, q);
 				// Reporting wrong Hex value, but "address" is proper..?
+				// Next two lines cause instability
+				kstrtol(address, 16, sys_call_address);
 				printk(KERN_INFO "The address we got is: %X after %d iterations\n", sys_call_address, q);
 				break;
 			}
