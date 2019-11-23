@@ -1,7 +1,7 @@
 # To run quick tests use the command "make test"
 # https://stackoverflow.com/questions/20301591/m-option-in-make-command-makefile
 obj-m += rootkit.o
-rootkit-objs := main.o lsFuncs.o
+rootkit-objs := main.o
 
 all:
 	sudo make -C /lib/modules/$(shell uname -r)/build/ M=$(PWD) modules

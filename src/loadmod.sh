@@ -3,6 +3,7 @@
 RMMODULE=rootkit
 INSMODULE=rootkit.ko
 
+sudo rmmod $RMMODULE
 sudo dmesg -c # Clear kernel log
 make
 sleep 1
