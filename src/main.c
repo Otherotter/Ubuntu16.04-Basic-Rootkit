@@ -15,6 +15,8 @@
 #include <linux/sched.h>
 #include <asm/current.h>
 #include <linux/kobject.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 
 
