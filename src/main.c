@@ -20,8 +20,7 @@
 
 
 MODULE_LICENSE("GPL") ;
-MODULE_AUTHOR("Brendan<brendan.foley@stonybrook.edu>, Brian<brian.j.lee@stonybrook.edu," +
-	      "Carlos<carlos.lopez@stonybrook.edu, Marc<marc.darita@stonybrook.edu") ;
+MODULE_AUTHOR("Brendan<brendan.foley@stonybrook.edu>, Brian<brian.j.lee@stonybrook.edu, Carlos<carlos.lopez@stonybrook.edu, Marc<marc.darita@stonybrook.edu") ;
 MODULE_DESCRIPTION("Rootkit for CSE331") ;
 MODULE_VERSION("1.0");
 
