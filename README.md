@@ -1,35 +1,34 @@
 # Rootkit
-This is a Rootkit for CSE331
+Project 1: Linux Rootkit
 
 ROLES OF PROJECT:
 
-1. Brain: Hide specific files and directories from showing up when a user does "ls" and similar commands (you have to come up with a protocol that allows attackers to change these)
+1. Brain Lee : Hide specific files and directories from showing up when a user does "ls" and similar commands (you have to come up with a protocol that allows attackers to change these)
 	* You can hide a total of 5 files and directories combined.
 	* Indicate the files you want to hide by setting the `fileNames` parameter along with the `insmod rootkit.ko` command
 	* Hide the "src" directory & "main.c" file by including `fileNames="src","main.c"`
 
-2. Marc: Modify the /etc/passwd and /etc/shadow file to add a backdoor account while returning the original contents of the files (pre-attack) when a normal user requests to see the file
+2. Marc De Rita: Modify the /etc/passwd and /etc/shadow file to add a backdoor account while returning the original contents of the files (pre-attack) when a normal user requests to see the file
 
-3. Carlos: Hides specific processes from the process table when a user does a "ps"
+3. Carlos Lopez: Hides specific processes from the process table when a user does a "ps"
 
-4. Brendan: Give the ability to a malicious process to elevate its uid to 0 (root) upon demand (again this involves coming up with a protocol for doing that)
+4. Brendan Foley: Give the ability to a malicious process to elevate its uid to 0 (root) upon demand (again this involves coming up with a protocol for doing that)
 
 
 kbuild: "kbuild" is the build system used by the Linux kernel. Modules must use kbuild to stay compatible with changes in the build infrastructure and to pick up the right flags to "gcc."
+
 	* obj-$(CONFIG_FOO) += foo.o ->> tells kbuild that there is one object in that directory, named foo.o. foo.o will be 
 	built from foo.c or foo.S.
 	* $(CONFIG_FOO) evaluates to either y (for built-in) or m (for module). If CONFIG_FOO is neither y nor m, then the 
 	file will not be compiled nor linked.
 
 
-
-
 Helpful Terminal Command (Info on commands found @ https://www.gnu.org/software/):
+
 	* uname: used to know system information. Running these command on the VM, these are the respective output:
 		* uname -s (kernal-name): Linux
     		* uname -v (kernal-version): #46~16.04.1-Ubuntu SMP Mon Dec 4 15:57:59 UTC 2017
     		* uname -o (operating system): GNU/Linux
-	* dir: list directory contents
 	* ps: display information about a selection of the active process
 		* (need more info on command)
 	* make: determines which pieces of programs need to be recompiled
@@ -52,30 +51,12 @@ Helpful Terminal Command (Info on commands found @ https://www.gnu.org/software/
 		* make -C : Change to directory dir before reading the makefiles or doing anything else.
 		
 
-Linux File Structure: 
-(source of file structure): https://www.howtogeek.com/117435/htg-explains-the-linux-directory-structure-explained/)
-    * /bin – Essential User Binaries
-		* The /bin directory contains the essential user binaries (programs) that must be present when the system is mounted in
-		  single-user mode. Applications such as Firefox are stored in /usr/bin, while important system programs and utilities 
-		  such as the bash shell are located in /bin. The /usr directory may be stored on another partition – placing these files 
-		  in the /bin directory ensures the system will have these important utilities even if no other file systems are mounted. 
-		  The /sbin directory is similar – it contains essential system administration binaries.
-     * ./sbin – System Administration Binaries. 
-        * The /sbin directory is similar to the /bin directory. It contains essential binaries that are generally intended to be 
-		  run by the root user for system administration.
+Important Linux File Structure:
+
     * ./proc – Kernel & Process Files
 		* The /proc directory similar to the /dev directory because it doesn’t contain
 		  standard files. It contains special files that represent system and process information.
-    * ./usr – User Binaries & Read-Only Data
-        * The /usr directory contains applications and files used by users, as opposed to applications and files used by the 
-		  system. For example, non-essential applications are located inside the /usr/bin directory instead of the /bin directory 
-		  and non-essential system administration binaries are located in the /usr/sbin directory instead of the /sbin directory. 
-		  Libraries for each are located inside the /usr/lib directory. The /usr directory also contains other directories – for 
-		  example, architecture-independent files like graphics are located in /usr/share. The /usr local directory is where 
-		  locally compiled applications install to by default – this prevents them from mucking up the rest of the system.
-    * /lib – Essential Shared Libraries
-        * The /lib directory contains libraries needed by the essential binaries in the /bin and /sbin folder. Libraries needed by 
-		  the binaries in the /usr/bin folder are located in /usr/lib.
+    
 
 
 Kernal module:
@@ -86,41 +67,28 @@ https://en.wikipedia.org/wiki/Loadable_kernel_module,
 https://linux-kernel-labs.github.io/master/labs/kernel_modules.html,
 http://tldp.org/LDP/lkmpg/2.6/html/lkmpg.html#AEN181
 }
+
 	* Loadable kernel module (LMK) is an object file that contains code to extend the running kernel, or so-called base kernel, of an operating system. LKMs are typically used to add support for new hardware (as device drivers) and/or filesystems, or for adding system calls. When the functionality provided by a LKM is no longer required, it can be unloaded in order to free memory and other resources.
-		* The adventage of having LMK is that they stop the operating system from having to include all possible anticipated 			  functionality already compiled directly into the base kernel. Much of this  would reside in memory without being used, 
-		  wasting memory, and would require that users rebuild and reboot the base kernel every time they require new 
-		  functionality.
-		* Disadventage of having LMK is that there could be a fragmetation penalty. On the contrary, a base kernal is unpacked 
-		  into real contiguous memory by its setup routines; thus, the base kernel code is never fragmented. So, because an LMK is 
-		  "outside code", there's a possible of the code crashing.
-        * In terms of security,  LMK are a convenient method of modifying the running kernel, this can be abused by attackers on a 
-		  compromised system to prevent detection of their processes or files, allowing them to maintain control over the system. 
-		  Many rootkits make use of LKMs in this way. Note that on most operating systems modules do not help privilege elevation 
-		  in any way, as elevated privilege is required to load a LKM; they merely make it easier for the attacker to hide the 
-		  break-in.
-			* Linux allows disabling module loading via sysctl option /proc/sys/kernel/modules_disabled. An initramfs (needs 
-              more outside information) system may load specific modules needed for a machine at boot and then disable module 
-			  loading. This makes the security very similar to a monolithic kernel. If an attacker can change the initramfs, they 
-			  can change the kernel binary.
 
-Steps for the hello.c  kernel module:
-Follow this source: http://tldp.org/LDP/lkmpg/2.6/html/lkmpg.html#AEN181
+	* The adventage of having LMK is that they stop the operating system from having to include all possible anticipated functionality already compiled directly into the base kernel. Much of this  would reside in memory without being used,wasting memory, and would require that users rebuild and reboot the base kernel every time they require new functionality.
+
+	* Disadventage of having LMK is that there could be a fragmetation penalty. On the contrary, a base kernal is unpacked into real contiguous memory by its setup routines; thus, the base kernel code is never fragmented. So, because an LMK is "outside code", there's a possible of the code crashing.
+        
+	* In terms of security,  LMK are a convenient method of modifying the running kernel, this can be abused by attackers on a compromised system to prevent detection of their processes or files, allowing them to maintain control over the system. Many rootkits make use of LKMs in this way. Note that on most operating systems modules do not help privilege elevation in any way, as elevated privilege is required to load a LKM; they merely make it easier for the attacker to hide the break-in.
+			
+	* Linux allows disabling module loading via sysctl option /proc/sys/kernel/modules_disabled. An initramfs (needs more outside information) system may load specific modules needed for a machine at boot and then disable module loading. This makes the security very similar to a monolithic kernel. If an attacker can change the initramfs, they can change the kernel binary.
+
+
+
+Steps to test Rootkit:
 	
-	* Created hello-1.c file
-	* In the terminal type: gedit Makefile
-	* A text editor should have popped up for Makefile
-	* Include everything from chapter 2.2 of the source in this Makefile file
-	* Now you are going to covert it into a readable kernal mod. Type in: make
-	* Now you must install the mod. In the terminal type: sudo insmod ./hello-1.ko	
-	* The mod should be installed. Type in: cat /proc/modules 
-	* To verify that the mod is functioning correct. Type in: cat /var/log/kern.log
-	* remove mod. Type in cat /var/log/kern.log  
+	make
+	
+	sudo insmod rootkit.ko
+	
+	sudo dmesg
+		
+	sudo rmmod rootkit.ko 
+	
 
-
-
-
-
-bib:
-    * https://blog.sourcerer.io/writing-a-simple-linux-kernel-module-d9dc3762c234
-        + Discuss Linux Modules.
 
