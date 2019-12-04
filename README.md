@@ -93,17 +93,17 @@ Steps to test Rootkit:
 Steps to test hidden user in passwd & shadow files:
 
 
-	make
+	$make
 		(Compile main)
-	sudo insmod rootkit.ko
+	$sudo insmod rootkit.ko
 		(Inject rootkit into kernel)
-	cat /etc/passwd
+	$cat /etc/passwd
 		(View passwd file and see rootkituser is not listed)
-	sudo cat /etc/shadow
+	$sudo cat /etc/shadow
 		(View shadow file and see rootkituser is not listed)
-	su rootkituser
+	$su rootkituser
 		(Log in to rootkituser, despite not being listed in the passwd nor shadow files)
-	cse331!
+	$cse331!
 		(Logs into rootkit user)
 	
 
