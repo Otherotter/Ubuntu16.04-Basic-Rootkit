@@ -65,7 +65,8 @@ https://unix.stackexchange.com/questions/27042/what-does-a-kernel-source-tree-co
 https://www.kernel.org/doc/html/latest/kbuild/modules.html,
 https://en.wikipedia.org/wiki/Loadable_kernel_module,
 https://linux-kernel-labs.github.io/master/labs/kernel_modules.html,
-http://tldp.org/LDP/lkmpg/2.6/html/lkmpg.html#AEN181
+http://tldp.org/LDP/lkmpg/2.6/html/lkmpg.html#AEN181,
+https://linux.die.net/lkmpg/x40.html
 }
 
 	* Loadable kernel module (LMK) is an object file that contains code to extend the running kernel, or so-called base kernel, of an operating system. LKMs are typically used to add support for new hardware (as device drivers) and/or filesystems, or for adding system calls. When the functionality provided by a LKM is no longer required, it can be unloaded in order to free memory and other resources.
